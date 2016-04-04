@@ -29,7 +29,7 @@ having run & evaluated the upload output previously.
 These files are checked in the top of a specific git repository.  Stacking
 them in subdirectories (to try and override parent settings) is not supported.
 
-## PRESUBMIT.cfg
+## PREUPLOAD.cfg
 
 This file controls the hooks/checks that get run when running `repo upload`.
 
@@ -37,13 +37,13 @@ This file controls the hooks/checks that get run when running `repo upload`.
 
 ```
 [Hook Scripts]
-name = script --with args ${PRESUBMIT_FILES}
+name = script --with args ${PREUPLOAD_FILES}
 
 [Builtin Hooks]
 cpplint = true
 
 [Builtin Hooks Options]
-cpplint = --filter=-x ${PRESUBMIT_FILES}
+cpplint = --filter=-x ${PREUPLOAD_FILES}
 ```
 
 ### Environment
@@ -59,7 +59,7 @@ A few environment variables are set so scripts don't need to discover things.
    e.g. `tools/repohooks`
 * `REPO_REMOTE`: The remote git URL.
    e.g. `https://android.googlesource.com/platform/tools/repohooks`
-* `PRESUBMIT_COMMIT`: The commit that is currently being checked.
+* `PREUPLOAD_COMMIT`: The commit that is currently being checked.
    e.g. `1f89dce0468448fa36f632d2fc52175cd6940a91`
 
 ### `[Hook Scripts]`
@@ -71,9 +71,9 @@ that is executed.
 
 ```
 [Hook Scripts]
-my_first_hook = program --gogog ${PRESUBMIT_FILES}
-another_hook = funtimes --i-need "some space" ${PRESUBMIT_FILES}
-some_fish = linter --ate-a-cat ${PRESUBMIT_FILES}
+my_first_hook = program --gogog ${PREUPLOAD_FILES}
+another_hook = funtimes --i-need "some space" ${PREUPLOAD_FILES}
+some_fish = linter --ate-a-cat ${PREUPLOAD_FILES}
 ```
 
 ### `[Builtin Hooks]`
@@ -103,7 +103,7 @@ gofmt = false
 Used to customize the behavior of specific `[Builtin Hooks]`.  Any arguments set
 here will be passed directly to the linter in question.  This will completely
 override any existing default options, so be sure to include everything you need
-(especially `${PRESUBMIT_FILES}` -- see below).
+(especially `${PREUPLOAD_FILES}` -- see below).
 
 Quoting is handled naturally.  i.e. use `"a b c"` to pass an argument with
 whitespace.
@@ -113,12 +113,12 @@ environment variables, but are expanded inline.  Files with whitespace and
 such will be expanded correctly via argument positions, so do not try to
 force your own quote handling.
 
-* `${PRESUBMIT_FILES}`: List of files to operate on.
+* `${PREUPLOAD_FILES}`: List of files to operate on.
 
 ```
 [Builtin Hooks Options]
 # Pass more filter args to cpplint.
-cpplint = --filter=-x ${PRESUBMIT_FILES}
+cpplint = --filter=-x ${PREUPLOAD_FILES}
 ```
 
 # Hook Developers
@@ -138,7 +138,7 @@ These are notes for people updating the `pre-upload.py` hook itself:
   entire repo in order to perform full checks.  e.g. `pylint` needs to know what
   other modules exist locally to verify their API.  We can support this case by
   doing a full checkout of the repo in a temp dir, but this can slow things down
-  a lot.  Will need to consider a `PRESUBMIT.cfg` knob.
+  a lot.  Will need to consider a `PREUPLOAD.cfg` knob.
 * We need to add `cpplint` and `pylint` tools to the AOSP manifest and use those
   local copies instead of relying on versions that are in $PATH.
 * Should make file extension filters configurable.  All hooks currently declare
