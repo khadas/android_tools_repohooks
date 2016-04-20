@@ -164,14 +164,14 @@ def _run_project_hooks(project_name, proj_dir=None,
         # Mix in some settings for our hooks.
         os.environ['PREUPLOAD_COMMIT'] = commit
         diff = rh.git.get_affected_files(commit)
+        desc = rh.git.get_commit_desc(commit)
 
         results = []
         for hook in hooks:
-            hook_results = hook(project, commit, diff)
+            hook_results = hook(project, commit, desc, diff)
             if hook_results:
                 results.extend(hook_results)
         if results:
-            desc = rh.git.get_commit_desc(commit)
             if not _process_hook_results(project.name, commit, desc, results):
                 ret = False
 

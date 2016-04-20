@@ -162,5 +162,5 @@ def get_commits():
 
 def get_commit_desc(commit):
     """Returns the full commit message of a commit."""
-    cmd = ['git', 'log', '--format=%s%n%n%b', commit + '^!']
+    cmd = ['git', 'log', '--format=%B', commit + '^!']
     return rh.utils.run_command(cmd, capture_output=True).output
