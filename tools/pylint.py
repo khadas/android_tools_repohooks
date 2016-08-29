@@ -38,6 +38,9 @@ def main(argv):
 
     pylintrc = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             'pylintrc')
+    # If we pass a non-existent rcfile to pylint, it'll happily ignore it.
+    assert os.path.exists(pylintrc), 'Could not find %s' % pylintrc
+
     cmd = ['pylint', '--rcfile', pylintrc] + opts.files
 
     if opts.init_hook:

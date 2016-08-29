@@ -94,6 +94,14 @@ def _update_options(options, diff):
     return ret
 
 
+# Where helper programs exist.
+TOOLS_DIR = os.path.realpath(__file__ + '/../../tools')
+
+def get_helper_path(tool):
+    """Return the full path to the helper |tool|."""
+    return os.path.join(TOOLS_DIR, tool)
+
+
 def check_custom(project, commit, diff, options=()):
     """Run a custom hook."""
     cmd = _update_options(options, diff)
@@ -163,8 +171,7 @@ def check_pylint(project, commit, diff, options=()):
     if not filtered:
         return
 
-    pylint = os.path.join(os.path.dirname(os.path.dirname(
-        os.path.realpath(__file__))), 'pylint.py')
+    pylint = get_helper_path('pylint.py')
     cmd = [pylint] + _update_options(options, filtered)
     return check_custom(project, commit, diff, options=cmd)
 
