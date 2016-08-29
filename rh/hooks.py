@@ -76,8 +76,8 @@ def _filter_diff(diff, include_list, exclude_list=()):
     filtered = []
     for d in diff:
         if (d.status != 'D' and
-            _match_regex_list(d.file, include_list) and
-            not _match_regex_list(d.file, exclude_list)):
+                _match_regex_list(d.file, include_list) and
+                not _match_regex_list(d.file, exclude_list)):
             # We've got a match!
             filtered.append(d)
     return filtered
@@ -164,6 +164,30 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=()):
     elif len(found) > 1:
         error = ('Commit message has too many "%s:" lines.  There can be only '
                  'one.') % (field,)
+    else:
+        return
+
+    return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
+                                  project, commit, error=error)]
+
+
+def check_commit_msg_test_field(project, commit, desc, _diff, options=()):
+    """Check the commit message for a 'Test:' line."""
+    field = 'Test'
+    regex = r'^%s: .*$' % (field,)
+    check_re = re.compile(regex)
+
+    if options:
+        raise ValueError('commit msg %s check takes no options' % (field,))
+
+    found = []
+    for line in desc.splitlines():
+        if check_re.match(line):
+            found.append(line)
+
+    if not found:
+        error = ('Commit message is missing a "%s:" line.  It must match:\n'
+                 '%s') % (field, regex)
     else:
         return
 
@@ -290,6 +314,7 @@ BUILTIN_HOOKS = {
     'checkpatch': check_checkpatch,
     'commit_msg_bug_field': check_commit_msg_bug_field,
     'commit_msg_changeid_field': check_commit_msg_changeid_field,
+    'commit_msg_test_field': check_commit_msg_test_field,
     'cpplint': check_cpplint,
     'gofmt': check_gofmt,
     'jsonlint': check_json,
