@@ -81,6 +81,7 @@ some_fish = linter --ate-a-cat ${PREUPLOAD_FILES}
 This section allows for turning on common/builtin hooks.  There are a bunch of
 canned hooks already included geared towards AOSP style guidelines.
 
+* `checkpatch`: Run commits through the Linux kernel's `checkpatch.pl` script.
 * `commit_msg_bug_field`: Require a valid `Bug:` line.
 * `commit_msg_changeid_field`: Require a valid `Change-Id:` Gerrit line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
