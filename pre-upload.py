@@ -168,7 +168,7 @@ def _run_project_hooks(project_name, proj_dir=None,
     ret = True
     for commit in commit_list:
         # Mix in some settings for our hooks.
-        os.environ['PRESUBMIT_COMMIT'] = commit
+        os.environ['PREUPLOAD_COMMIT'] = commit
         diff = rh.git.get_affected_files(commit)
 
         results = []

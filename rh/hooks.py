@@ -87,7 +87,7 @@ def _update_options(options, diff):
     """Update various place holders in |options| and return the new args."""
     ret = []
     for option in options:
-        if option == '${PRESUBMIT_FILES}':
+        if option == '${PREUPLOAD_FILES}':
             ret.extend(x.file for x in diff if x.status != 'D')
         else:
             ret.append(option)
@@ -103,7 +103,7 @@ def check_custom(project, commit, diff, options=()):
 def check_cpplint(project, commit, diff, options=()):
     """Run cpplint."""
     if not options:
-        options = ('${PRESUBMIT_FILES}',)
+        options = ('${PREUPLOAD_FILES}',)
 
     # This list matches what cpplint expects.  We could run on more (like .cxx),
     # but cpplint would just ignore them.
@@ -157,7 +157,7 @@ def check_json(project, commit, diff, options=()):
 def check_pylint(project, commit, diff, options=()):
     """Run pylint."""
     if not options:
-        options = ('${PRESUBMIT_FILES}',)
+        options = ('${PREUPLOAD_FILES}',)
 
     filtered = _filter_diff(diff, [r'\.py$'])
     if not filtered:
@@ -172,7 +172,7 @@ def check_pylint(project, commit, diff, options=()):
 def check_xmllint(project, commit, diff, options=()):
     """Run xmllint."""
     if not options:
-        options = ('${PRESUBMIT_FILES}',)
+        options = ('${PREUPLOAD_FILES}',)
 
     # XXX: Should we drop most of these and probe for <?xml> tags?
     extensions = frozenset((
