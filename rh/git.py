@@ -29,6 +29,19 @@ del _path
 import rh.utils
 
 
+def get_upstream_remote():
+    """Returns the current upstream remote name."""
+    # First get the current branch name.
+    cmd = ['git', 'rev-parse', '--abbrev-ref', 'HEAD']
+    result = rh.utils.run_command(cmd, capture_output=True)
+    branch = result.output.strip()
+
+    # Then get the remote associated with this branch.
+    cmd = ['git', 'config', 'branch.%s.remote' % branch]
+    result = rh.utils.run_command(cmd, capture_output=True)
+    return result.output.strip()
+
+
 def get_upstream_branch():
     """Returns the upstream tracking branch of the current branch.
 
@@ -45,6 +58,9 @@ def get_upstream_branch():
     cmd = ['git', 'config', cfg_option % 'merge']
     result = rh.utils.run_command(cmd, capture_output=True)
     full_upstream = result.output.strip()
+    # If remote is not fully qualified, add an implicit namespace.
+    if '/' not in full_upstream:
+        full_upstream = 'refs/heads/%s' % full_upstream
     cmd = ['git', 'config', cfg_option % 'remote']
     result = rh.utils.run_command(cmd, capture_output=True)
     remote = result.output.strip()

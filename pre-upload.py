@@ -146,17 +146,8 @@ def _run_project_hooks(project_name, proj_dir=None,
     if not hooks:
         return True
 
-    cmd = ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
-    result = rh.utils.run_command(cmd, capture_output=True)
-    remote_branch = result.output.strip()
-    if not remote_branch:
-        print('Your project %s doesn\'t track any remote repo.' % project_name,
-              file=sys.stderr)
-        remote = None
-    else:
-        remote, _branch = remote_branch.split('/', 1)
-
     # Set up the environment like repo would with the forall command.
+    remote = rh.git.get_upstream_remote()
     os.environ.update({
         'REPO_PROJECT': project_name,
         'REPO_PATH': proj_dir,
