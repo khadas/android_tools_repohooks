@@ -84,6 +84,7 @@ canned hooks already included geared towards AOSP style guidelines.
 * `checkpatch`: Run commits through the Linux kernel's `checkpatch.pl` script.
 * `commit_msg_bug_field`: Require a valid `Bug:` line.
 * `commit_msg_changeid_field`: Require a valid `Change-Id:` Gerrit line.
+* `commit_msg_test_field`: Require a `Test:` line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
 * `gofmt`: Run Go code through `gofmt`.
 * `jsonlint`: Verify JSON code is sane.
