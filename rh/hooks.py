@@ -102,10 +102,22 @@ def get_helper_path(tool):
     return os.path.join(TOOLS_DIR, tool)
 
 
-def check_custom(project, commit, _desc, diff, options=()):
+def check_custom(project, commit, _desc, diff, options=(), **kwargs):
     """Run a custom hook."""
     cmd = _update_options(options, diff)
-    return [rh.results.HookCommandResult(project, commit, _run_command(cmd))]
+    return [rh.results.HookCommandResult(project, commit,
+                                         _run_command(cmd, **kwargs))]
+
+
+def check_checkpatch(project, commit, desc, diff, options=()):
+    """Run |diff| through the kernel's checkpatch.pl tool."""
+    if not options:
+        options = ('--ignore=GERRIT_CHANGE_ID',)
+
+    tool = get_helper_path('checkpatch.pl')
+    cmd = [tool, '-', '--root', project.dir] + list(options)
+    return check_custom(project, commit, desc, diff, options=cmd,
+                        input=rh.git.get_patch(commit))
 
 
 def check_commit_msg_bug_field(project, commit, desc, _diff, options=()):
@@ -275,6 +287,7 @@ def check_xmllint(project, commit, desc, diff, options=()):
 # Hooks that projects can opt into.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
+    'checkpatch': check_checkpatch,
     'commit_msg_bug_field': check_commit_msg_bug_field,
     'commit_msg_changeid_field': check_commit_msg_changeid_field,
     'cpplint': check_cpplint,
