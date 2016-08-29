@@ -74,6 +74,7 @@ that is executed.
 my_first_hook = program --gogog ${PREUPLOAD_FILES}
 another_hook = funtimes --i-need "some space" ${PREUPLOAD_FILES}
 some_fish = linter --ate-a-cat ${PREUPLOAD_FILES}
+some_dog = tool --no-cat-in-commit-message ${PREUPLOAD_COMMIT_MESSAGE}
 ```
 
 ### `[Builtin Hooks]`
@@ -118,6 +119,7 @@ such will be expanded correctly via argument positions, so do not try to
 force your own quote handling.
 
 * `${PREUPLOAD_FILES}`: List of files to operate on.
+* `${PREUPLOAD_COMMIT_MESSAGE}`: Commit message.
 
 ```
 [Builtin Hooks Options]

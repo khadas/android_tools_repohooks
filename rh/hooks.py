@@ -89,6 +89,8 @@ def _update_options(options, diff):
     for option in options:
         if option == '${PREUPLOAD_FILES}':
             ret.extend(x.file for x in diff if x.status != 'D')
+        elif option == '${PREUPLOAD_COMMIT_MESSAGE}':
+            ret.append(os.environ['PREUPLOAD_COMMIT_MESSAGE'])
         else:
             ret.append(option)
     return ret
