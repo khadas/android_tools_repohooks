@@ -81,6 +81,8 @@ some_fish = linter --ate-a-cat ${PREUPLOAD_FILES}
 This section allows for turning on common/builtin hooks.  There are a bunch of
 canned hooks already included geared towards AOSP style guidelines.
 
+* `commit_msg_bug_field`: Require a valid `Bug:` line.
+* `commit_msg_changeid_field`: Require a valid `Change-Id:` Gerrit line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
 * `gofmt`: Run Go code through `gofmt`.
 * `jsonlint`: Verify JSON code is sane.

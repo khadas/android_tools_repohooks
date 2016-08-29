@@ -102,13 +102,64 @@ def get_helper_path(tool):
     return os.path.join(TOOLS_DIR, tool)
 
 
-def check_custom(project, commit, diff, options=()):
+def check_custom(project, commit, _desc, diff, options=()):
     """Run a custom hook."""
     cmd = _update_options(options, diff)
     return [rh.results.HookCommandResult(project, commit, _run_command(cmd))]
 
 
-def check_cpplint(project, commit, diff, options=()):
+def check_commit_msg_bug_field(project, commit, desc, _diff, options=()):
+    """Check the commit message for a 'Bug:' line."""
+    field = 'Bug'
+    regex = r'^%s: [0-9]+(, [0-9]+)*$' % (field,)
+    check_re = re.compile(regex)
+
+    if options:
+        raise ValueError('commit msg %s check takes no options' % (field,))
+
+    found = []
+    for line in desc.splitlines():
+        if check_re.match(line):
+            found.append(line)
+
+    if not found:
+        error = ('Commit message is missing a "%s:" line.  It must match:\n'
+                 '%s') % (field, regex)
+    else:
+        return
+
+    return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
+                                  project, commit, error=error)]
+
+
+def check_commit_msg_changeid_field(project, commit, desc, _diff, options=()):
+    """Check the commit message for a 'Change-Id:' line."""
+    field = 'Change-Id'
+    regex = r'^%s: I[a-f0-9]+$' % (field,)
+    check_re = re.compile(regex)
+
+    if options:
+        raise ValueError('commit msg %s check takes no options' % (field,))
+
+    found = []
+    for line in desc.splitlines():
+        if check_re.match(line):
+            found.append(line)
+
+    if len(found) == 0:
+        error = ('Commit message is missing a "%s:" line.  It must match:\n'
+                 '%s') % (field, regex)
+    elif len(found) > 1:
+        error = ('Commit message has too many "%s:" lines.  There can be only '
+                 'one.') % (field,)
+    else:
+        return
+
+    return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
+                                  project, commit, error=error)]
+
+
+def check_cpplint(project, commit, desc, diff, options=()):
     """Run cpplint."""
     if not options:
         options = ('${PREUPLOAD_FILES}',)
@@ -120,10 +171,10 @@ def check_cpplint(project, commit, diff, options=()):
         return
 
     cmd = ['cpplint.py'] + _update_options(options, filtered)
-    return check_custom(project, commit, diff, options=cmd)
+    return check_custom(project, commit, desc, diff, options=cmd)
 
 
-def check_gofmt(project, commit, diff, options=()):
+def check_gofmt(project, commit, _desc, diff, options=()):
     """Checks that Go files are formatted with gofmt."""
     filtered = _filter_diff(diff, [r'\.go$'])
     if not filtered:
@@ -141,7 +192,7 @@ def check_gofmt(project, commit, diff, options=()):
     return ret
 
 
-def check_json(project, commit, diff, options=()):
+def check_json(project, commit, _desc, diff, options=()):
     """Verify json files are valid."""
     if options:
         raise ValueError('json check takes no options')
@@ -162,7 +213,7 @@ def check_json(project, commit, diff, options=()):
     return ret
 
 
-def check_pylint(project, commit, diff, options=()):
+def check_pylint(project, commit, desc, diff, options=()):
     """Run pylint."""
     if not options:
         options = ('${PREUPLOAD_FILES}',)
@@ -173,10 +224,10 @@ def check_pylint(project, commit, diff, options=()):
 
     pylint = get_helper_path('pylint.py')
     cmd = [pylint] + _update_options(options, filtered)
-    return check_custom(project, commit, diff, options=cmd)
+    return check_custom(project, commit, desc, diff, options=cmd)
 
 
-def check_xmllint(project, commit, diff, options=()):
+def check_xmllint(project, commit, desc, diff, options=()):
     """Run xmllint."""
     if not options:
         options = ('${PREUPLOAD_FILES}',)
@@ -218,12 +269,14 @@ def check_xmllint(project, commit, diff, options=()):
     # TODO: Figure out how to integrate schema validation.
     # XXX: Should we use python's XML libs instead?
     cmd = ['xmllint'] + _update_options(options, filtered)
-    return check_custom(project, commit, diff, options=cmd)
+    return check_custom(project, commit, desc, diff, options=cmd)
 
 
 # Hooks that projects can opt into.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
+    'commit_msg_bug_field': check_commit_msg_bug_field,
+    'commit_msg_changeid_field': check_commit_msg_changeid_field,
     'cpplint': check_cpplint,
     'gofmt': check_gofmt,
     'jsonlint': check_json,
