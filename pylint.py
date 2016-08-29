@@ -26,6 +26,7 @@ import sys
 def get_parser():
     """Return a command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--init-hook', help='Init hook commands to run.')
     parser.add_argument('files', nargs='+')
     return parser
 
@@ -38,6 +39,10 @@ def main(argv):
     pylintrc = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             'pylintrc')
     cmd = ['pylint', '--rcfile', pylintrc] + opts.files
+
+    if opts.init_hook:
+        cmd += ['--init-hook', opts.init_hook]
+
     os.execvp(cmd[0], cmd)
 
 
