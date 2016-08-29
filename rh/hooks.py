@@ -284,6 +284,7 @@ def check_xmllint(project, commit, desc, diff, options=()):
         'nib',       # OS X Cocoa Interface Builder.
         'plist',     # Property list (for OS X).
         'pom',       # Project Object Model (for Apache Maven).
+        'rng',       # RELAX NG schemas.
         'sgml',      # Standard Generalized Markup Language.
         'svg',       # Scalable Vector Graphics.
         'uml',       # Unified Modeling Language.
