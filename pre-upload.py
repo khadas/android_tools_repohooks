@@ -141,6 +141,11 @@ def _run_project_hooks(project_name, proj_dir=None,
     # Hooks assume they are run from the root of the project.
     os.chdir(proj_dir)
 
+    # If the repo has no pre-upload hooks enabled, then just return.
+    hooks = list(_get_project_hooks())
+    if not hooks:
+        return True
+
     cmd = ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']
     result = rh.utils.run_command(cmd, capture_output=True)
     remote_branch = result.output.strip()
@@ -162,8 +167,6 @@ def _run_project_hooks(project_name, proj_dir=None,
 
     if not commit_list:
         commit_list = rh.git.get_commits()
-
-    hooks = _get_project_hooks()
 
     ret = True
     for commit in commit_list:
