@@ -165,6 +165,7 @@ def _run_project_hooks(project_name, proj_dir=None,
         os.environ['PREUPLOAD_COMMIT'] = commit
         diff = rh.git.get_affected_files(commit)
         desc = rh.git.get_commit_desc(commit)
+        os.environ['PREUPLOAD_COMMIT_MESSAGE'] = desc
 
         results = []
         for hook in hooks:
