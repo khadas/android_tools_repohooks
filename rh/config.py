@@ -96,6 +96,7 @@ class PreSubmitConfig(object):
     CUSTOM_HOOKS_SECTION = 'Hook Scripts'
     BUILTIN_HOOKS_SECTION = 'Builtin Hooks'
     BUILTIN_HOOKS_OPTIONS_SECTION = 'Builtin Hooks Options'
+    TOOL_PATHS_SECTION = 'Tool Paths'
 
     def __init__(self, paths=('',), global_paths=()):
         """Initialize.
@@ -146,15 +147,24 @@ class PreSubmitConfig(object):
         return shlex.split(self.config.get(self.BUILTIN_HOOKS_OPTIONS_SECTION,
                                            hook, ''))
 
+    @property
+    def tool_paths(self):
+        """List of all tool paths."""
+        return dict(self.config.items(self.TOOL_PATHS_SECTION, ()))
+
     def callable_hooks(self):
         """Yield a callback for each hook to be executed (custom & builtin)."""
         for hook in self.custom_hooks:
+            options = rh.hooks.HookOptions(self.custom_hook(hook),
+                                           self.tool_paths)
             yield functools.partial(rh.hooks.check_custom,
-                                    options=self.custom_hook(hook))
+                                    options=options)
 
         for hook in self.builtin_hooks:
+            options = rh.hooks.HookOptions(self.builtin_hook_option(hook),
+                                           self.tool_paths)
             yield functools.partial(rh.hooks.BUILTIN_HOOKS[hook],
-                                    options=self.builtin_hook_option(hook))
+                                    options=options)
 
     def _validate(self):
         """Run consistency checks on the config settings."""
@@ -165,6 +175,7 @@ class PreSubmitConfig(object):
             self.CUSTOM_HOOKS_SECTION,
             self.BUILTIN_HOOKS_SECTION,
             self.BUILTIN_HOOKS_OPTIONS_SECTION,
+            self.TOOL_PATHS_SECTION,
         ))
         bad_sections = set(config.sections()) - valid_sections
         if bad_sections:
@@ -211,3 +222,12 @@ class PreSubmitConfig(object):
             except ValueError as e:
                 raise ValidationError('%s: hook options "%s" are invalid: %s' %
                                       (self.paths, hook, e))
+
+        # Reject unknown tools.
+        valid_tools = set(rh.hooks.TOOL_PATHS.keys())
+        if config.has_section(self.TOOL_PATHS_SECTION):
+            tools = set(config.options(self.TOOL_PATHS_SECTION))
+            bad_tools = tools - valid_tools
+            if bad_tools:
+                raise ValidationError('%s: unknown tools: %s' %
+                                      (self.paths, bad_tools))
