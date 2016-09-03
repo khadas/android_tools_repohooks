@@ -127,7 +127,7 @@ def check_checkpatch(project, commit, desc, diff, options=()):
 def check_commit_msg_bug_field(project, commit, desc, _diff, options=()):
     """Check the commit message for a 'Bug:' line."""
     field = 'Bug'
-    regex = r'^%s: [0-9]+(, [0-9]+)*$' % (field,)
+    regex = r'^%s: (None|[0-9]+(, [0-9]+)*)$' % (field,)
     check_re = re.compile(regex)
 
     if options:
