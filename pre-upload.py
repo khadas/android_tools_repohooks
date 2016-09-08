@@ -98,8 +98,19 @@ def _get_project_hooks():
 
     Expects to be called from within the project root.
     """
+    global_paths = (
+        # Load the global config found in the manifest repo.
+        os.path.join(rh.git.find_repo_root(), '.repo', 'manifests'),
+        # Load the global config found in the root of the repo checkout.
+        rh.git.find_repo_root(),
+    )
+    paths = (
+        # Load the config for this git repo.
+        '.',
+    )
     try:
-        config = rh.config.PreSubmitConfig()
+        config = rh.config.PreSubmitConfig(paths=paths,
+                                           global_paths=global_paths)
     except rh.config.ValidationError as e:
         print('invalid config file: %s' % (e,), file=sys.stderr)
         sys.exit(1)

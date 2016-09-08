@@ -91,24 +91,37 @@ class PreSubmitConfig(object):
     """Config file used for per-project `repo upload` hooks."""
 
     FILENAME = 'PREUPLOAD.cfg'
+    GLOBAL_FILENAME = 'GLOBAL-PREUPLOAD.cfg'
 
     CUSTOM_HOOKS_SECTION = 'Hook Scripts'
     BUILTIN_HOOKS_SECTION = 'Builtin Hooks'
     BUILTIN_HOOKS_OPTIONS_SECTION = 'Builtin Hooks Options'
 
-    def __init__(self, path=''):
+    def __init__(self, paths=('',), global_paths=()):
         """Initialize.
 
+        All the config files found will be merged together in order.
+
         Args:
-          path: The directory to look for config files.
+          paths: The directories to look for config files.
+          global_paths: The directories to look for global config files.
         """
         config = RawConfigParser()
-        self.path = os.path.join(path, self.FILENAME)
-        if os.path.exists(self.path):
-            try:
-                config.read(self.path)
-            except ConfigParser.ParsingError as e:
-                raise ValidationError('%s: %s' % (self.path, e))
+
+        def _search(paths, filename):
+            for path in paths:
+                path = os.path.join(path, filename)
+                if os.path.exists(path):
+                    self.paths.append(path)
+                    try:
+                        config.read(path)
+                    except ConfigParser.ParsingError as e:
+                        raise ValidationError('%s: %s' % (path, e))
+
+        self.paths = []
+        _search(global_paths, self.GLOBAL_FILENAME)
+        _search(paths, self.FILENAME)
+
         self.config = config
 
         self._validate()
@@ -156,13 +169,13 @@ class PreSubmitConfig(object):
         bad_sections = set(config.sections()) - valid_sections
         if bad_sections:
             raise ValidationError('%s: unknown sections: %s' %
-                                  (self.path, bad_sections))
+                                  (self.paths, bad_sections))
 
         # Reject blank custom hooks.
         for hook in self.custom_hooks:
             if not config.get(self.CUSTOM_HOOKS_SECTION, hook):
                 raise ValidationError('%s: custom hook "%s" cannot be blank' %
-                                      (self.path, hook))
+                                      (self.paths, hook))
 
         # Reject unknown builtin hooks.
         valid_builtin_hooks = set(rh.hooks.BUILTIN_HOOKS.keys())
@@ -171,7 +184,7 @@ class PreSubmitConfig(object):
             bad_hooks = hooks - valid_builtin_hooks
             if bad_hooks:
                 raise ValidationError('%s: unknown builtin hooks: %s' %
-                                      (self.path, bad_hooks))
+                                      (self.paths, bad_hooks))
         elif config.has_section(self.BUILTIN_HOOKS_OPTIONS_SECTION):
             raise ValidationError('Builtin hook options specified, but missing '
                                   'builtin hook settings')
@@ -181,7 +194,7 @@ class PreSubmitConfig(object):
             bad_hooks = hooks - valid_builtin_hooks
             if bad_hooks:
                 raise ValidationError('%s: unknown builtin hook options: %s' %
-                                      (self.path, bad_hooks))
+                                      (self.paths, bad_hooks))
 
         # Verify hooks are valid shell strings.
         for hook in self.custom_hooks:
@@ -189,7 +202,7 @@ class PreSubmitConfig(object):
                 self.custom_hook(hook)
             except ValueError as e:
                 raise ValidationError('%s: hook "%s" command line is invalid: '
-                                      '%s' % (self.path, hook, e))
+                                      '%s' % (self.paths, hook, e))
 
         # Verify hook options are valid shell strings.
         for hook in self.builtin_hooks:
@@ -197,4 +210,4 @@ class PreSubmitConfig(object):
                 self.builtin_hook_option(hook)
             except ValueError as e:
                 raise ValidationError('%s: hook options "%s" are invalid: %s' %
-                                      (self.path, hook, e))
+                                      (self.paths, hook, e))

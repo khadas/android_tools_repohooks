@@ -26,12 +26,31 @@ having run & evaluated the upload output previously.
 
 # Config Files
 
-These files are checked in the top of a specific git repository.  Stacking
-them in subdirectories (to try and override parent settings) is not supported.
+There are two types of config files:
+* Repo project-wide settings (e.g. all of AOSP).  These set up defaults for all
+  projects that are checked out via a single manifest.
+* Project-local settings (e.g. a single .git repo).  These control settings for
+  the local project you're working on.
+
+The merging of these config files control the hooks/checks that get run when
+running `repo upload`.
+
+## GLOBAL-PREUPLOAD.cfg
+
+These are the manifest-wide defaults and can be located in two places:
+* `.repo/manifests/GLOBAL-PREUPLOAD.cfg`: The manifest git repo.
+  Simply check this in to the manifest git repo and you're done.
+* `GLOBAL-PREUPLOAD.cfg`: The top level of the repo checkout.
+  For manifests that don't have a project checked out at the top level,
+  you can use repo's `<copyfile>` directive.
+
+These config files will be loaded first before stacking `PREUPLOAD.cfg`
+settings on top.
 
 ## PREUPLOAD.cfg
 
-This file controls the hooks/checks that get run when running `repo upload`.
+This file are checked in the top of a specific git repository.  Stacking them
+in subdirectories (to try and override parent settings) is not supported.
 
 ### Example
 

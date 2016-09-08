@@ -164,3 +164,18 @@ def get_commit_desc(commit):
     """Returns the full commit message of a commit."""
     cmd = ['git', 'log', '--format=%B', commit + '^!']
     return rh.utils.run_command(cmd, capture_output=True).output
+
+
+def find_repo_root(path=None):
+    """Locate the top level of this repo checkout starting at |path|."""
+    if path is None:
+        path = os.getcwd()
+    orig_path = path
+
+    path = os.path.abspath(path)
+    while not os.path.exists(os.path.join(path, '.repo')):
+        path = os.path.dirname(path)
+        if path == '/':
+            raise ValueError('Could not locate .repo in %s' % orig_path)
+
+    return path
