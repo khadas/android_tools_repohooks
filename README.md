@@ -63,6 +63,9 @@ cpplint = true
 
 [Builtin Hooks Options]
 cpplint = --filter=-x ${PREUPLOAD_FILES}
+
+[Tool Paths]
+clang-format = /usr/bin/clang-format
 ```
 
 ### Environment
@@ -103,6 +106,8 @@ This section allows for turning on common/builtin hooks.  There are a bunch of
 canned hooks already included geared towards AOSP style guidelines.
 
 * `checkpatch`: Run commits through the Linux kernel's `checkpatch.pl` script.
+* `clang_format`: Run git-clang-format against the commit. The default style is
+  `file`.
 * `commit_msg_bug_field`: Require a valid `Bug:` line.
 * `commit_msg_changeid_field`: Require a valid `Change-Id:` Gerrit line.
 * `commit_msg_test_field`: Require a `Test:` line.
@@ -148,6 +153,34 @@ force your own quote handling.
 cpplint = --filter=-x ${PREUPLOAD_FILES}
 ```
 
+### `[Tool Paths]`
+
+Some builtin hooks need to call external executables to work correctly.  By
+default it will call those tools from the user's `$PATH`, but the paths of those
+executables can be overridden through `[Tool Paths]`.  This is helpful to
+provide consistent behavior for developers across different OS and Linux
+distros/versions.  The following tools are recognized:
+
+* `clang-format`: used for the `clang_format` builtin hook.
+* `git-clang-format`: used for the `clang_format` builtin hook.
+
+Some variables are available to make it easier to handle OS differences.  These
+are automatically expanded for you:
+
+* `${REPO_ROOT}`: The absolute path of the root of the repo checkout.
+* `${BUILD_OS}`: The string `darwin-x86` for macOS and the string `linux-x86`
+  for Linux/x86.
+
+```
+[Tool Paths]
+# Pass absolute paths.
+clang-format = /usr/bin/clang-format
+# Or paths relative to the top of the git project.
+clang-format = prebuilts/bin/clang-format
+# Or paths relative to the repo root.
+clang-format = ${REPO_ROOT}/prebuilts/clang/host/${BUILD_OS}/clang-stable/bin/clang-format
+```
+
 # Hook Developers
 
 These are notes for people updating the `pre-upload.py` hook itself:
@@ -168,10 +201,12 @@ These are notes for people updating the `pre-upload.py` hook itself:
   a lot.  Will need to consider a `PREUPLOAD.cfg` knob.
 * We need to add `cpplint` and `pylint` tools to the AOSP manifest and use those
   local copies instead of relying on versions that are in $PATH.
+* `clang-format` diffs each change against the current working tree.  This works
+  well if a single change is being uploaded, but if multiple commits are being
+  uploaded, later commits in the chain will have false positives.
 * Should make file extension filters configurable.  All hooks currently declare
   their own list of files like `.cc` and `.py` and `.xml`.
 * Add more checkers.
-  * `clang-format`: Checks style/formatting of code.
   * `clang-check`: Runs static analyzers against code.
   * License checking (like require AOSP header).
   * Whitespace checking (trailing/tab mixing/etc...).

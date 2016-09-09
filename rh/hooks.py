@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import json
 import os
+import platform
 import re
 import sys
 
@@ -30,6 +31,76 @@ del _path
 import rh.results
 import rh.git
 import rh.utils
+
+
+class HookOptions(object):
+    """Holder class for hook options."""
+
+    def __init__(self, args, tool_paths):
+        """Initialize.
+
+        Args:
+          args: The override commandline arguments for the hook.
+          tool_paths: A dictionary with tool names to paths.
+        """
+        self._args = args
+        self._tool_paths = tool_paths
+
+    def args(self, default_args=(), diff=()):
+        """Gets the hook arguments, after performing place holder expansion.
+
+        Args:
+          default_args: The list to return if |self._args| is empty.
+          diff: The list of files that changed in the current commit.
+
+        Returns:
+          A list with arguments.
+        """
+        args = self._args
+        if not args:
+            args = default_args
+
+        ret = []
+        for arg in args:
+            if arg == '${PREUPLOAD_FILES}':
+                ret.extend(x.file for x in diff if x.status != 'D')
+            elif arg == '${PREUPLOAD_COMMIT_MESSAGE}':
+                ret.append(os.environ['PREUPLOAD_COMMIT_MESSAGE'])
+            elif arg == '${PREUPLOAD_COMMIT}':
+                ret.append(os.environ['PREUPLOAD_COMMIT'])
+            else:
+                ret.append(arg)
+
+        return ret
+
+    def tool_path(self, tool_name):
+        """Gets the path in which the |tool_name| executable can be found.
+
+        This function performs expansion for some place holders.  If the tool
+        does not exist in the overriden |self._tool_paths| dictionary, the tool
+        name will be returned and will be run from the user's $PATH.
+
+        Args:
+          tool_name: The name of the executable.
+
+        Returns:
+          The path of the tool with all optional place holders expanded.
+        """
+        assert tool_name in TOOL_PATHS
+        if tool_name not in self._tool_paths:
+            return tool_name
+
+        components = []
+        tool_path = os.path.normpath(self._tool_paths[tool_name])
+        for component in tool_path.split(os.sep):
+            if component == '${REPO_ROOT}':
+                components.append(rh.git.find_repo_root())
+            elif component == '${BUILD_OS}':
+                components.append(_get_build_os_name())
+            else:
+                components.append(component)
+
+        return os.sep.join(components)
 
 
 def _run_command(cmd, **kwargs):
@@ -83,19 +154,24 @@ def _filter_diff(diff, include_list, exclude_list=()):
     return filtered
 
 
-def _update_options(options, diff):
-    """Update various place holders in |options| and return the new args."""
-    ret = []
-    for option in options:
-        if option == '${PREUPLOAD_FILES}':
-            ret.extend(x.file for x in diff if x.status != 'D')
-        elif option == '${PREUPLOAD_COMMIT_MESSAGE}':
-            ret.append(os.environ['PREUPLOAD_COMMIT_MESSAGE'])
-        elif option == '${PREUPLOAD_COMMIT}':
-            ret.append(os.environ['PREUPLOAD_COMMIT'])
-        else:
-            ret.append(option)
-    return ret
+def _get_build_os_name():
+    """Gets the build OS name.
+
+    Returns:
+      A string in a format usable to get prebuilt tool paths.
+    """
+    system = platform.system()
+    if 'Darwin' in system or 'Macintosh' in system:
+        return 'darwin-x86'
+    else:
+        # TODO: Add more values if needed.
+        return 'linux-x86'
+
+
+def _check_cmd(project, commit, cmd, **kwargs):
+    """Runs |cmd| and returns its result as a HookCommandResult."""
+    return [rh.results.HookCommandResult(project, commit,
+                                         _run_command(cmd, **kwargs))]
 
 
 # Where helper programs exist.
@@ -106,31 +182,37 @@ def get_helper_path(tool):
     return os.path.join(TOOLS_DIR, tool)
 
 
-def check_custom(project, commit, _desc, diff, options=(), **kwargs):
+def check_custom(project, commit, _desc, diff, options=None, **kwargs):
     """Run a custom hook."""
-    cmd = _update_options(options, diff)
-    return [rh.results.HookCommandResult(project, commit,
-                                         _run_command(cmd, **kwargs))]
+    return _check_cmd(project, commit, options.args((), diff), **kwargs)
 
 
-def check_checkpatch(project, commit, desc, diff, options=()):
+def check_checkpatch(project, commit, _desc, diff, options=None):
     """Run |diff| through the kernel's checkpatch.pl tool."""
-    if not options:
-        options = ('--ignore=GERRIT_CHANGE_ID',)
-
     tool = get_helper_path('checkpatch.pl')
-    cmd = [tool, '-', '--root', project.dir] + list(options)
-    return check_custom(project, commit, desc, diff, options=cmd,
-                        input=rh.git.get_patch(commit))
+    cmd = ([tool, '-', '--root', project.dir] +
+           options.args(('--ignore=GERRIT_CHANGE_ID',), diff))
+    return _check_cmd(project, commit, cmd, input=rh.git.get_patch(commit))
 
 
-def check_commit_msg_bug_field(project, commit, desc, _diff, options=()):
+def check_clang_format(project, commit, _desc, diff, options=None):
+    """Run git clang-format on the commit."""
+    tool = get_helper_path('clang-format.py')
+    clang_format = options.tool_path('clang-format')
+    git_clang_format = options.tool_path('git-clang-format')
+    cmd = ([tool, '--clang-format', clang_format, '--git-clang-format',
+            git_clang_format] +
+           options.args(('--style', 'file', '--commit', commit), diff))
+    return _check_cmd(project, commit, cmd)
+
+
+def check_commit_msg_bug_field(project, commit, desc, _diff, options=None):
     """Check the commit message for a 'Bug:' line."""
     field = 'Bug'
     regex = r'^%s: (None|[0-9]+(, [0-9]+)*)$' % (field,)
     check_re = re.compile(regex)
 
-    if options:
+    if options.args():
         raise ValueError('commit msg %s check takes no options' % (field,))
 
     found = []
@@ -148,13 +230,13 @@ def check_commit_msg_bug_field(project, commit, desc, _diff, options=()):
                                   project, commit, error=error)]
 
 
-def check_commit_msg_changeid_field(project, commit, desc, _diff, options=()):
+def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
     """Check the commit message for a 'Change-Id:' line."""
     field = 'Change-Id'
     regex = r'^%s: I[a-f0-9]+$' % (field,)
     check_re = re.compile(regex)
 
-    if options:
+    if options.args():
         raise ValueError('commit msg %s check takes no options' % (field,))
 
     found = []
@@ -175,13 +257,13 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=()):
                                   project, commit, error=error)]
 
 
-def check_commit_msg_test_field(project, commit, desc, _diff, options=()):
+def check_commit_msg_test_field(project, commit, desc, _diff, options=None):
     """Check the commit message for a 'Test:' line."""
     field = 'Test'
     regex = r'^%s: .*$' % (field,)
     check_re = re.compile(regex)
 
-    if options:
+    if options.args():
         raise ValueError('commit msg %s check takes no options' % (field,))
 
     found = []
@@ -199,28 +281,25 @@ def check_commit_msg_test_field(project, commit, desc, _diff, options=()):
                                   project, commit, error=error)]
 
 
-def check_cpplint(project, commit, desc, diff, options=()):
+def check_cpplint(project, commit, _desc, diff, options=None):
     """Run cpplint."""
-    if not options:
-        options = ('${PREUPLOAD_FILES}',)
-
     # This list matches what cpplint expects.  We could run on more (like .cxx),
     # but cpplint would just ignore them.
     filtered = _filter_diff(diff, [r'\.(cc|h|cpp|cu|cuh)$'])
     if not filtered:
         return
 
-    cmd = ['cpplint.py'] + _update_options(options, filtered)
-    return check_custom(project, commit, desc, diff, options=cmd)
+    cmd = ['cpplint.py'] + options.args(('${PREUPLOAD_FILES}',), filtered)
+    return _check_cmd(project, commit, cmd)
 
 
-def check_gofmt(project, commit, _desc, diff, options=()):
+def check_gofmt(project, commit, _desc, diff, options=None):
     """Checks that Go files are formatted with gofmt."""
     filtered = _filter_diff(diff, [r'\.go$'])
     if not filtered:
         return
 
-    cmd = ['gofmt', '-l'] + _update_options(options, filtered)
+    cmd = ['gofmt', '-l'] + options.args((), filtered)
     ret = []
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
@@ -232,9 +311,9 @@ def check_gofmt(project, commit, _desc, diff, options=()):
     return ret
 
 
-def check_json(project, commit, _desc, diff, options=()):
+def check_json(project, commit, _desc, diff, options=None):
     """Verify json files are valid."""
-    if options:
+    if options.args():
         raise ValueError('json check takes no options')
 
     filtered = _filter_diff(diff, [r'\.json$'])
@@ -253,25 +332,19 @@ def check_json(project, commit, _desc, diff, options=()):
     return ret
 
 
-def check_pylint(project, commit, desc, diff, options=()):
+def check_pylint(project, commit, _desc, diff, options=None):
     """Run pylint."""
-    if not options:
-        options = ('${PREUPLOAD_FILES}',)
-
     filtered = _filter_diff(diff, [r'\.py$'])
     if not filtered:
         return
 
     pylint = get_helper_path('pylint.py')
-    cmd = [pylint] + _update_options(options, filtered)
-    return check_custom(project, commit, desc, diff, options=cmd)
+    cmd = [pylint] + options.args(('${PREUPLOAD_FILES}',), filtered)
+    return _check_cmd(project, commit, cmd)
 
 
-def check_xmllint(project, commit, desc, diff, options=()):
+def check_xmllint(project, commit, _desc, diff, options=None):
     """Run xmllint."""
-    if not options:
-        options = ('${PREUPLOAD_FILES}',)
-
     # XXX: Should we drop most of these and probe for <?xml> tags?
     extensions = frozenset((
         'dbus-xml',  # Generated DBUS interface.
@@ -309,14 +382,16 @@ def check_xmllint(project, commit, desc, diff, options=()):
 
     # TODO: Figure out how to integrate schema validation.
     # XXX: Should we use python's XML libs instead?
-    cmd = ['xmllint'] + _update_options(options, filtered)
-    return check_custom(project, commit, desc, diff, options=cmd)
+    cmd = ['xmllint'] + options.args(('${PREUPLOAD_FILES}',), filtered)
+
+    return _check_cmd(project, commit, cmd)
 
 
 # Hooks that projects can opt into.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
     'checkpatch': check_checkpatch,
+    'clang_format': check_clang_format,
     'commit_msg_bug_field': check_commit_msg_bug_field,
     'commit_msg_changeid_field': check_commit_msg_changeid_field,
     'commit_msg_test_field': check_commit_msg_test_field,
@@ -325,4 +400,11 @@ BUILTIN_HOOKS = {
     'jsonlint': check_json,
     'pylint': check_pylint,
     'xmllint': check_xmllint,
+}
+
+# Additional tools that the hooks can call with their default values.
+# Note: Make sure to keep the top level README.md up to date when adding more!
+TOOL_PATHS = {
+    'clang-format': 'clang-format',
+    'git-clang-format': 'git-clang-format',
 }
