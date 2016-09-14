@@ -163,6 +163,7 @@ distros/versions.  The following tools are recognized:
 
 * `clang-format`: used for the `clang_format` builtin hook.
 * `git-clang-format`: used for the `clang_format` builtin hook.
+* `cpplint`: used for the `cpplint` builtin hook.
 
 Some variables are available to make it easier to handle OS differences.  These
 are automatically expanded for you:
@@ -199,8 +200,8 @@ These are notes for people updating the `pre-upload.py` hook itself:
   other modules exist locally to verify their API.  We can support this case by
   doing a full checkout of the repo in a temp dir, but this can slow things down
   a lot.  Will need to consider a `PREUPLOAD.cfg` knob.
-* We need to add `cpplint` and `pylint` tools to the AOSP manifest and use those
-  local copies instead of relying on versions that are in $PATH.
+* We need to add `pylint` tool to the AOSP manifest and use that local copy
+  instead of relying on the version that is in $PATH.
 * `clang-format` diffs each change against the current working tree.  This works
   well if a single change is being uploaded, but if multiple commits are being
   uploaded, later commits in the chain will have false positives.
