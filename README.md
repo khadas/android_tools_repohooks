@@ -162,8 +162,9 @@ provide consistent behavior for developers across different OS and Linux
 distros/versions.  The following tools are recognized:
 
 * `clang-format`: used for the `clang_format` builtin hook.
-* `git-clang-format`: used for the `clang_format` builtin hook.
 * `cpplint`: used for the `cpplint` builtin hook.
+* `git-clang-format`: used for the `clang_format` builtin hook.
+* `pylint`: used for the `pylint` builtin hook.
 
 Some variables are available to make it easier to handle OS differences.  These
 are automatically expanded for you:
