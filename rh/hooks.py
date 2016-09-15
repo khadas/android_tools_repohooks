@@ -339,8 +339,11 @@ def check_pylint(project, commit, _desc, diff, options=None):
     if not filtered:
         return
 
-    pylint = get_helper_path('pylint.py')
-    cmd = [pylint] + options.args(('${PREUPLOAD_FILES}',), filtered)
+    pylint = options.tool_path('pylint')
+    cmd = [
+        get_helper_path('pylint.py'),
+        '--executable-path', pylint,
+    ] + options.args(('${PREUPLOAD_FILES}',), filtered)
     return _check_cmd(project, commit, cmd)
 
 
@@ -407,6 +410,7 @@ BUILTIN_HOOKS = {
 # Note: Make sure to keep the top level README.md up to date when adding more!
 TOOL_PATHS = {
     'clang-format': 'clang-format',
-    'git-clang-format': 'git-clang-format',
     'cpplint': os.path.join(TOOLS_DIR, 'cpplint.py'),
+    'git-clang-format': 'git-clang-format',
+    'pylint': 'pylint',
 }
