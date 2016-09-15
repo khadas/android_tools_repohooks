@@ -77,7 +77,7 @@ class HookOptions(object):
         """Gets the path in which the |tool_name| executable can be found.
 
         This function performs expansion for some place holders.  If the tool
-        does not exist in the overriden |self._tool_paths| dictionary, the tool
+        does not exist in the overridden |self._tool_paths| dictionary, the tool
         name will be returned and will be run from the user's $PATH.
 
         Args:
@@ -88,7 +88,7 @@ class HookOptions(object):
         """
         assert tool_name in TOOL_PATHS
         if tool_name not in self._tool_paths:
-            return tool_name
+            return TOOL_PATHS[tool_name]
 
         components = []
         tool_path = os.path.normpath(self._tool_paths[tool_name])
@@ -289,7 +289,8 @@ def check_cpplint(project, commit, _desc, diff, options=None):
     if not filtered:
         return
 
-    cmd = ['cpplint.py'] + options.args(('${PREUPLOAD_FILES}',), filtered)
+    cpplint = options.tool_path('cpplint')
+    cmd = [cpplint] + options.args(('${PREUPLOAD_FILES}',), filtered)
     return _check_cmd(project, commit, cmd)
 
 
@@ -407,4 +408,5 @@ BUILTIN_HOOKS = {
 TOOL_PATHS = {
     'clang-format': 'clang-format',
     'git-clang-format': 'git-clang-format',
+    'cpplint': os.path.join(TOOLS_DIR, 'cpplint.py'),
 }
