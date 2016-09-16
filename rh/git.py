@@ -131,7 +131,7 @@ def raw_diff(path, target):
 
     cmd = ['git', 'diff', '-M', '--raw', target]
     diff = rh.utils.run_command(cmd, cwd=path, capture_output=True).output
-    diff_lines = diff.strip().split('\n')
+    diff_lines = diff.strip().splitlines()
     for line in diff_lines:
         match = DIFF_RE.match(line)
         if not match:
