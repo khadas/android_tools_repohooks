@@ -257,6 +257,33 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
                                   project, commit, error=error)]
 
 
+TEST_MSG = """Commit message is missing a "Test:" line.  It must match:
+%s
+
+The Test: stanza is free-form and should describe how you tested your change.
+As a CL author, you'll have a consistent place to describe the testing strategy
+you use for your work. As a CL reviewer, you'll be reminded to discuss testing
+as part of your code review, and you'll more easily replicate testing when you
+patch in CLs locally.
+
+Some examples below:
+
+Test: make WITH_TIDY=1 mmma art
+Test: make test-art
+Test: manual - took a photo
+Test: refactoring CL. Existing unit tests still pass.
+
+Check the Gerrit history for more examples. It's a free-form field, so we urge
+you to develop conventions that make sense for your project. Note that many
+projects use exact test commands, which are perfectly fine.
+
+Adding good automated tests with new code is critical to our goals of keeping
+Android stable and constantly improving Android quality. Please use Test: to
+highlight this area of your development. And reviewers, please insist on
+high-quality Test: descriptions.
+"""
+
+
 def check_commit_msg_test_field(project, commit, desc, _diff, options=None):
     """Check the commit message for a 'Test:' line."""
     field = 'Test'
@@ -272,8 +299,7 @@ def check_commit_msg_test_field(project, commit, desc, _diff, options=None):
             found.append(line)
 
     if not found:
-        error = ('Commit message is missing a "%s:" line.  It must match:\n'
-                 '%s') % (field, regex)
+        error = TEST_MSG % (regex)
     else:
         return
 
