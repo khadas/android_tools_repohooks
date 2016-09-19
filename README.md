@@ -52,7 +52,7 @@ settings on top.
 This file are checked in the top of a specific git repository.  Stacking them
 in subdirectories (to try and override parent settings) is not supported.
 
-### Example
+## Example
 
 ```
 [Hook Scripts]
@@ -68,7 +68,7 @@ cpplint = --filter=-x ${PREUPLOAD_FILES}
 clang-format = /usr/bin/clang-format
 ```
 
-### Environment
+## Environment
 
 Hooks are executed in the top directory of the git repository.  All paths should
 generally be relative to that point.
@@ -84,7 +84,7 @@ A few environment variables are set so scripts don't need to discover things.
 * `PREUPLOAD_COMMIT`: The commit that is currently being checked.
    e.g. `1f89dce0468448fa36f632d2fc52175cd6940a91`
 
-### `[Hook Scripts]`
+## [Hook Scripts]
 
 This section allows for completely arbitrary hooks to run on a per-repo basis.
 
@@ -100,7 +100,7 @@ some_cat = formatter --cat-commit ${PREUPLOAD_COMMIT}
 some_dog = tool --no-cat-in-commit-message ${PREUPLOAD_COMMIT_MESSAGE}
 ```
 
-### `[Builtin Hooks]`
+## [Builtin Hooks]
 
 This section allows for turning on common/builtin hooks.  There are a bunch of
 canned hooks already included geared towards AOSP style guidelines.
@@ -128,7 +128,7 @@ cpplint = true
 gofmt = false
 ```
 
-### `[Builtin Hooks Options]`
+## [Builtin Hooks Options]
 
 Used to customize the behavior of specific `[Builtin Hooks]`.  Any arguments set
 here will be passed directly to the linter in question.  This will completely
@@ -153,7 +153,7 @@ force your own quote handling.
 cpplint = --filter=-x ${PREUPLOAD_FILES}
 ```
 
-### `[Tool Paths]`
+## [Tool Paths]
 
 Some builtin hooks need to call external executables to work correctly.  By
 default it will call those tools from the user's `$PATH`, but the paths of those
