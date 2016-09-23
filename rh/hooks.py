@@ -36,13 +36,15 @@ import rh.utils
 class HookOptions(object):
     """Holder class for hook options."""
 
-    def __init__(self, args, tool_paths):
+    def __init__(self, name, args, tool_paths):
         """Initialize.
 
         Args:
+          name: The name of the hook.
           args: The override commandline arguments for the hook.
           tool_paths: A dictionary with tool names to paths.
         """
+        self.name = name
         self._args = args
         self._tool_paths = tool_paths
 
@@ -168,9 +170,9 @@ def _get_build_os_name():
         return 'linux-x86'
 
 
-def _check_cmd(project, commit, cmd, **kwargs):
+def _check_cmd(hook_name, project, commit, cmd, **kwargs):
     """Runs |cmd| and returns its result as a HookCommandResult."""
-    return [rh.results.HookCommandResult(project, commit,
+    return [rh.results.HookCommandResult(hook_name, project, commit,
                                          _run_command(cmd, **kwargs))]
 
 
@@ -184,7 +186,8 @@ def get_helper_path(tool):
 
 def check_custom(project, commit, _desc, diff, options=None, **kwargs):
     """Run a custom hook."""
-    return _check_cmd(project, commit, options.args((), diff), **kwargs)
+    return _check_cmd(options.name, project, commit, options.args((), diff),
+                      **kwargs)
 
 
 def check_checkpatch(project, commit, _desc, diff, options=None):
@@ -192,7 +195,8 @@ def check_checkpatch(project, commit, _desc, diff, options=None):
     tool = get_helper_path('checkpatch.pl')
     cmd = ([tool, '-', '--root', project.dir] +
            options.args(('--ignore=GERRIT_CHANGE_ID',), diff))
-    return _check_cmd(project, commit, cmd, input=rh.git.get_patch(commit))
+    return _check_cmd('checkpatch.pl', project, commit, cmd,
+                      input=rh.git.get_patch(commit))
 
 
 def check_clang_format(project, commit, _desc, diff, options=None):
@@ -203,7 +207,7 @@ def check_clang_format(project, commit, _desc, diff, options=None):
     cmd = ([tool, '--clang-format', clang_format, '--git-clang-format',
             git_clang_format] +
            options.args(('--style', 'file', '--commit', commit), diff))
-    return _check_cmd(project, commit, cmd)
+    return _check_cmd('clang-format', project, commit, cmd)
 
 
 def check_commit_msg_bug_field(project, commit, desc, _diff, options=None):
@@ -317,7 +321,7 @@ def check_cpplint(project, commit, _desc, diff, options=None):
 
     cpplint = options.tool_path('cpplint')
     cmd = [cpplint] + options.args(('${PREUPLOAD_FILES}',), filtered)
-    return _check_cmd(project, commit, cmd)
+    return _check_cmd('cpplint', project, commit, cmd)
 
 
 def check_gofmt(project, commit, _desc, diff, options=None):
@@ -370,7 +374,7 @@ def check_pylint(project, commit, _desc, diff, options=None):
         get_helper_path('pylint.py'),
         '--executable-path', pylint,
     ] + options.args(('${PREUPLOAD_FILES}',), filtered)
-    return _check_cmd(project, commit, cmd)
+    return _check_cmd('pylint', project, commit, cmd)
 
 
 def check_xmllint(project, commit, _desc, diff, options=None):
@@ -414,7 +418,7 @@ def check_xmllint(project, commit, _desc, diff, options=None):
     # XXX: Should we use python's XML libs instead?
     cmd = ['xmllint'] + options.args(('${PREUPLOAD_FILES}',), filtered)
 
-    return _check_cmd(project, commit, cmd)
+    return _check_cmd('xmllint', project, commit, cmd)
 
 
 # Hooks that projects can opt into.
