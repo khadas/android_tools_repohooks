@@ -155,13 +155,15 @@ class PreSubmitConfig(object):
     def callable_hooks(self):
         """Yield a callback for each hook to be executed (custom & builtin)."""
         for hook in self.custom_hooks:
-            options = rh.hooks.HookOptions(self.custom_hook(hook),
+            options = rh.hooks.HookOptions(hook,
+                                           self.custom_hook(hook),
                                            self.tool_paths)
             yield functools.partial(rh.hooks.check_custom,
                                     options=options)
 
         for hook in self.builtin_hooks:
-            options = rh.hooks.HookOptions(self.builtin_hook_option(hook),
+            options = rh.hooks.HookOptions(hook,
+                                           self.builtin_hook_option(hook),
                                            self.tool_paths)
             yield functools.partial(rh.hooks.BUILTIN_HOOKS[hook],
                                     options=options)

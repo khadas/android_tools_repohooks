@@ -47,8 +47,7 @@ class HookResult(object):
 class HookCommandResult(HookResult):
     """A single hook result based on a CommandResult."""
 
-    def __init__(self, project, commit, result, files=()):
-        hook = os.path.basename(result.cmd[0])
+    def __init__(self, hook, project, commit, result, files=()):
         HookResult.__init__(self, hook, project, commit,
                             result.error if result.error else result.output,
                             files=files)
