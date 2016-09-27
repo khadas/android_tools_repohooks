@@ -89,7 +89,8 @@ A few environment variables are set so scripts don't need to discover things.
 This section allows for completely arbitrary hooks to run on a per-repo basis.
 
 The key can be any name (as long as the syntax is valid), as can the program
-that is executed.
+that is executed. The key is used as the name of the hook for reporting purposes,
+so it should be at least somewhat descriptive.
 
 ```
 [Hook Scripts]
