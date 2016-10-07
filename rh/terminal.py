@@ -64,7 +64,7 @@ class Color(object):
         return ''
 
     def stop(self):
-        """Retruns a stop color code.
+        """Returns a stop color code.
 
         Returns:
           If color is enabled, returns an ANSI color reset sequence, otherwise
