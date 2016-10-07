@@ -53,44 +53,91 @@ REPOHOOKS_URL = 'https://android.googlesource.com/platform/tools/repohooks/'
 Project = collections.namedtuple('Project', ['name', 'dir', 'remote'])
 
 
-def _process_hook_results(project, commit, commit_desc, results):
-    """Prints the hook error to stderr with project and commit context
+class Output(object):
+    """Class for reporting hook status."""
+
+    COLOR = rh.terminal.Color()
+    COMMIT = COLOR.color(COLOR.CYAN, 'COMMIT')
+    RUNNING = COLOR.color(COLOR.YELLOW, 'RUNNING')
+    PASSED = COLOR.color(COLOR.GREEN, 'PASSED')
+    FAILED = COLOR.color(COLOR.RED, 'FAILED')
+
+    def __init__(self, project_name, num_hooks):
+        """Create a new Output object for a specified project.
+
+        Args:
+          project_name: name of project.
+          num_hooks: number of hooks to be run.
+        """
+        self.project_name = project_name
+        self.num_hooks = num_hooks
+        self.hook_index = 0
+        self.success = True
+
+    def commit_start(self, commit, commit_summary):
+        """Emit status for new commit.
+
+        Args:
+          commit: commit hash.
+          commit_summary: commit summary.
+        """
+        status_line = '[%s %s] %s' % (self.COMMIT, commit[0:12], commit_summary)
+        rh.terminal.print_status_line(status_line, print_newline=True)
+        self.hook_index = 1
+
+    def hook_start(self, hook_name):
+        """Emit status before the start of a hook.
+
+        Args:
+          hook_name: name of the hook.
+        """
+        status_line = '[%s %d/%d] %s' % (self.RUNNING, self.hook_index,
+                                         self.num_hooks, hook_name)
+        self.hook_index += 1
+        rh.terminal.print_status_line(status_line)
+
+    def hook_error(self, hook_name, error):
+        """Print an error.
+
+        Args:
+          hook_name: name of the hook.
+          error: error string.
+        """
+        status_line = '[%s] %s' % (self.FAILED, hook_name)
+        rh.terminal.print_status_line(status_line, print_newline=True)
+        print(error, file=sys.stderr)
+        self.success = False
+
+    def finish(self):
+        """Print repohook summary."""
+        status_line = '[%s] repohooks for %s %s' % (
+            self.PASSED if self.success else self.FAILED,
+            self.project_name,
+            'passed' if self.success else 'failed')
+        rh.terminal.print_status_line(status_line, print_newline=True)
+
+
+def _process_hook_results(results):
+    """Returns an error string if an error occurred.
 
     Args:
-      project: The project name.
-      commit: The commit hash the errors belong to.
-      commit_desc: A string containing the commit message.
-      results: A list of HookResult objects.
+      results: A list of HookResult objects, or None.
 
     Returns:
-      False if any errors were found, else True.
+      error output if an error occurred, otherwise None
     """
-    color = rh.terminal.Color()
-    def _print_banner():
-        print('%s: %s: hooks failed' %
-              (color.color(color.RED, 'ERROR'), project),
-              file=sys.stderr)
+    if not results:
+        return None
 
-        commit_summary = commit_desc.splitlines()[0]
-        print('COMMIT: %s (%s)' % (commit[0:12], commit_summary),
-              file=sys.stderr)
-
-    ret = True
+    ret = ''
     for result in results:
         if result:
-            if ret:
-                _print_banner()
-                ret = False
-
-            print('%s: %s' % (color.color(color.CYAN, 'HOOK'), result.hook),
-                  file=sys.stderr)
             if result.files:
-                print('  FILES: %s' % (result.files,), file=sys.stderr)
+                ret += '  FILES: %s' % (result.files,)
             lines = result.error.splitlines()
-            print('\n'.join('    %s' % (x,) for x in lines), file=sys.stderr)
-            print('', file=sys.stderr)
+            ret += '\n'.join('    %s' % (x,) for x in lines)
 
-    return ret
+    return ret or None
 
 
 def _get_project_hooks():
@@ -170,12 +217,14 @@ def _run_project_hooks(project_name, proj_dir=None,
         'REPO_REMOTE': remote,
     })
 
+    output = Output(project_name, len(hooks))
     project = Project(name=project_name, dir=proj_dir, remote=remote)
 
     if not commit_list:
         commit_list = rh.git.get_commits()
 
     ret = True
+
     for commit in commit_list:
         # Mix in some settings for our hooks.
         os.environ['PREUPLOAD_COMMIT'] = commit
@@ -183,15 +232,18 @@ def _run_project_hooks(project_name, proj_dir=None,
         desc = rh.git.get_commit_desc(commit)
         os.environ['PREUPLOAD_COMMIT_MESSAGE'] = desc
 
-        results = []
-        for hook in hooks:
-            hook_results = hook(project, commit, desc, diff)
-            if hook_results:
-                results.extend(hook_results)
-        if results:
-            if not _process_hook_results(project.name, commit, desc, results):
-                ret = False
+        commit_summary = desc.split('\n', 1)[0]
+        output.commit_start(commit=commit, commit_summary=commit_summary)
 
+        for name, hook in hooks:
+            output.hook_start(name)
+            hook_results = hook(project, commit, desc, diff)
+            error = _process_hook_results(hook_results)
+            if error:
+                ret = False
+                output.hook_error(name, error)
+
+    output.finish()
     os.chdir(pwd)
     return ret
 
