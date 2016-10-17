@@ -97,6 +97,10 @@ class PreSubmitConfig(object):
     BUILTIN_HOOKS_SECTION = 'Builtin Hooks'
     BUILTIN_HOOKS_OPTIONS_SECTION = 'Builtin Hooks Options'
     TOOL_PATHS_SECTION = 'Tool Paths'
+    OPTIONS_SECTION = 'Options'
+
+    OPTION_IGNORE_MERGED_COMMITS = 'ignore_merged_commits'
+    VALID_OPTIONS = (OPTION_IGNORE_MERGED_COMMITS,)
 
     def __init__(self, paths=('',), global_paths=()):
         """Initialize.
@@ -168,6 +172,14 @@ class PreSubmitConfig(object):
             yield (hook, functools.partial(rh.hooks.BUILTIN_HOOKS[hook],
                                            options=options))
 
+    @property
+    def ignore_merged_commits(self):
+        """Whether to skip hooks for merged commits."""
+        return rh.shell.boolean_shell_value(
+            self.config.get(self.OPTIONS_SECTION,
+                            self.OPTION_IGNORE_MERGED_COMMITS, None),
+            False)
+
     def _validate(self):
         """Run consistency checks on the config settings."""
         config = self.config
@@ -178,6 +190,7 @@ class PreSubmitConfig(object):
             self.BUILTIN_HOOKS_SECTION,
             self.BUILTIN_HOOKS_OPTIONS_SECTION,
             self.TOOL_PATHS_SECTION,
+            self.OPTIONS_SECTION,
         ))
         bad_sections = set(config.sections()) - valid_sections
         if bad_sections:
@@ -233,3 +246,12 @@ class PreSubmitConfig(object):
             if bad_tools:
                 raise ValidationError('%s: unknown tools: %s' %
                                       (self.paths, bad_tools))
+
+        # Reject unknown options.
+        valid_options = set(self.VALID_OPTIONS)
+        if config.has_section(self.OPTIONS_SECTION):
+            options = set(config.options(self.OPTIONS_SECTION))
+            bad_options = options - valid_options
+            if bad_options:
+                raise ValidationError('%s: unknown options: %s' %
+                                      (self.paths, bad_options))

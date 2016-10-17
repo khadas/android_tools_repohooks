@@ -75,6 +75,9 @@ cpplint = true
 
 [Builtin Hooks Options]
 cpplint = --some 'more args'
+
+[Options]
+ignore_merged_commits = true
 """)
         rh.config.PreSubmitConfig(paths=(self.tempdir,))
 
