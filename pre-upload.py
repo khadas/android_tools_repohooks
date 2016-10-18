@@ -140,8 +140,8 @@ def _process_hook_results(results):
     return ret or None
 
 
-def _get_project_hooks():
-    """Returns a list of hooks that need to be run for a project.
+def _get_project_config():
+    """Returns the configuration for a project.
 
     Expects to be called from within the project root.
     """
@@ -161,7 +161,7 @@ def _get_project_hooks():
     except rh.config.ValidationError as e:
         print('invalid config file: %s' % (e,), file=sys.stderr)
         sys.exit(1)
-    return config.callable_hooks()
+    return config
 
 
 def _run_project_hooks(project_name, proj_dir=None,
@@ -200,7 +200,8 @@ def _run_project_hooks(project_name, proj_dir=None,
     os.chdir(proj_dir)
 
     # If the repo has no pre-upload hooks enabled, then just return.
-    hooks = list(_get_project_hooks())
+    config = _get_project_config()
+    hooks = list(config.callable_hooks())
     if not hooks:
         return True
 
@@ -221,7 +222,8 @@ def _run_project_hooks(project_name, proj_dir=None,
     project = Project(name=project_name, dir=proj_dir, remote=remote)
 
     if not commit_list:
-        commit_list = rh.git.get_commits()
+        commit_list = rh.git.get_commits(
+            ignore_merged_commits=config.ignore_merged_commits)
 
     ret = True
 
