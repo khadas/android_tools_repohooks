@@ -55,6 +55,9 @@ in subdirectories (to try and override parent settings) is not supported.
 ## Example
 
 ```
+[Options]
+ignore_merged_commits = true
+
 [Hook Scripts]
 name = script --with args ${PREUPLOAD_FILES}
 
@@ -83,6 +86,14 @@ A few environment variables are set so scripts don't need to discover things.
    e.g. `https://android.googlesource.com/platform/tools/repohooks`
 * `PREUPLOAD_COMMIT`: The commit that is currently being checked.
    e.g. `1f89dce0468448fa36f632d2fc52175cd6940a91`
+
+## [Options]
+
+This section allows for setting options that affect the overall behavior of the
+pre-upload checks.  The following options are recognized:
+
+* `ignore_merged_commits`: If set to `true`, the hooks will not run on commits
+  that are merged.  Hooks will still run on the merge commit itself.
 
 ## [Hook Scripts]
 

@@ -154,9 +154,11 @@ def get_affected_files(commit):
     return raw_diff(os.getcwd(), '%s^!' % commit)
 
 
-def get_commits():
+def get_commits(ignore_merged_commits=False):
     """Returns a list of commits for this review."""
     cmd = ['git', 'log', '%s..' % get_upstream_branch(), '--format=%H']
+    if ignore_merged_commits:
+        cmd.append('--first-parent')
     return rh.utils.run_command(cmd, capture_output=True).output.split()
 
 
