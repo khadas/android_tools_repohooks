@@ -330,7 +330,8 @@ def check_gofmt(project, commit, _desc, diff, options=None):
     if not filtered:
         return
 
-    cmd = ['gofmt', '-l'] + options.args((), filtered)
+    gofmt = options.tool_path('gofmt')
+    cmd = [gofmt, '-l'] + options.args((), filtered)
     ret = []
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
@@ -442,5 +443,6 @@ TOOL_PATHS = {
     'clang-format': 'clang-format',
     'cpplint': os.path.join(TOOLS_DIR, 'cpplint.py'),
     'git-clang-format': 'git-clang-format',
+    'gofmt': 'gofmt',
     'pylint': 'pylint',
 }
