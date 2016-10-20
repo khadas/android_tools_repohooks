@@ -43,23 +43,42 @@ def get_parser():
                         help='The path of the clang-format executable.')
     parser.add_argument('--git-clang-format', default='git-clang-format',
                         help='The path of the git-clang-format executable.')
-    parser.add_argument('--commit', type=str, default='HEAD',
-                        help='Specify the commit to validate.')
+    parser.add_argument('--style', metavar='STYLE', type=str,
+                        help='The style that clang-format will use.')
+    parser.add_argument('--extensions', metavar='EXTENSIONS', type=str,
+                        help='Comma-separated list of file extensions to '
+                             'format.')
+    parser.add_argument('--fix', action='store_true',
+                        help='Fix any formatting errors automatically.')
+
+    scope = parser.add_mutually_exclusive_group(required=True)
+    scope.add_argument('--commit', type=str, default='HEAD',
+                       help='Specify the commit to validate.')
+    scope.add_argument('--working-tree', action='store_true',
+                       help='Validates the files that have changed from '
+                            'HEAD in the working directory.')
+
+    parser.add_argument('files', type=str, nargs='*',
+                        help='If specified, only consider differences in '
+                             'these files.')
     return parser
 
 
 def main(argv):
     """The main entry."""
     parser = get_parser()
-    opts, unknown = parser.parse_known_args(argv)
+    opts = parser.parse_args(argv)
 
-    # TODO(b/31305183): Avoid false positives by limiting git-clang-format's
-    # diffs to just that commit instead of from the parent of the commit against
-    # the working tree.
-    cmd = [opts.git_clang_format, '--binary',
-           opts.clang_format, '--commit=%s^' % opts.commit] + unknown
+    cmd = [opts.git_clang_format, '--binary', opts.clang_format, '--diff']
+    if opts.style:
+        cmd.extend(['--style', opts.style])
+    if opts.extensions:
+        cmd.extend(['--extensions', opts.extensions])
+    if not opts.working_tree:
+        cmd.extend(['%s^' % opts.commit, opts.commit])
+    cmd.extend(['--'] + opts.files)
 
-    stdout = rh.utils.run_command(cmd + ['--diff'], capture_output=True).output
+    stdout = rh.utils.run_command(cmd, capture_output=True).output
     if stdout.rstrip('\n') == 'no modified files to format':
         # This is always printed when only files that clang-format does not
         # understand were modified.
@@ -71,11 +90,15 @@ def main(argv):
             diff_filenames.append(line[len(DIFF_MARKER_PREFIX):].rstrip())
 
     if diff_filenames:
-        print('The following files have formatting errors:')
-        for filename in diff_filenames:
-            print('\t%s' % filename)
-        print('You can run `%s` to fix this' % rh.shell.cmd_to_str(cmd))
-        return 1
+        if opts.fix:
+            rh.utils.run_command(['git', 'apply'], input=stdout)
+        else:
+            print('The following files have formatting errors:')
+            for filename in diff_filenames:
+                print('\t%s' % filename)
+            print('You can run `%s --fix %s` to fix this' %
+                  (sys.argv[0], rh.shell.cmd_to_str(argv)))
+            return 1
 
     return 0
 
