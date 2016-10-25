@@ -87,6 +87,24 @@ A few environment variables are set so scripts don't need to discover things.
 * `PREUPLOAD_COMMIT`: The commit that is currently being checked.
    e.g. `1f89dce0468448fa36f632d2fc52175cd6940a91`
 
+## Placeholders
+
+A few keywords are recognized to pass down settings.  These are **not**
+environment variables, but are expanded inline.  Files with whitespace and
+such will be expanded correctly via argument positions, so do not try to
+force your own quote handling.
+
+* `${PREUPLOAD_FILES}`: List of files to operate on.
+* `${PREUPLOAD_COMMIT}`: Commit hash.
+* `${PREUPLOAD_COMMIT_MESSAGE}`: Commit message.
+
+Some variables are available to make it easier to handle OS differences.  These
+are automatically expanded for you:
+
+* `${REPO_ROOT}`: The absolute path of the root of the repo checkout.
+* `${BUILD_OS}`: The string `darwin-x86` for macOS and the string `linux-x86`
+  for Linux/x86.
+
 ## [Options]
 
 This section allows for setting options that affect the overall behavior of the
@@ -150,14 +168,7 @@ override any existing default options, so be sure to include everything you need
 Quoting is handled naturally.  i.e. use `"a b c"` to pass an argument with
 whitespace.
 
-A few keywords are recognized to pass down settings.  These are **not**
-environment variables, but are expanded inline.  Files with whitespace and
-such will be expanded correctly via argument positions, so do not try to
-force your own quote handling.
-
-* `${PREUPLOAD_FILES}`: List of files to operate on.
-* `${PREUPLOAD_COMMIT}`: Commit hash.
-* `${PREUPLOAD_COMMIT_MESSAGE}`: Commit message.
+See [Placeholders](#Placeholders) for variables you can expand automatically.
 
 ```
 [Builtin Hooks Options]
@@ -179,12 +190,7 @@ distros/versions.  The following tools are recognized:
 * `gofmt`: used for the `gofmt` builtin hook.
 * `pylint`: used for the `pylint` builtin hook.
 
-Some variables are available to make it easier to handle OS differences.  These
-are automatically expanded for you:
-
-* `${REPO_ROOT}`: The absolute path of the root of the repo checkout.
-* `${BUILD_OS}`: The string `darwin-x86` for macOS and the string `linux-x86`
-  for Linux/x86.
+See [Placeholders](#Placeholders) for variables you can expand automatically.
 
 ```
 [Tool Paths]

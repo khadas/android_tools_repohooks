@@ -33,6 +33,100 @@ import rh.git
 import rh.utils
 
 
+class Placeholders(object):
+    """Holder class for replacing ${vars} in arg lists.
+
+    To add a new variable to replace in config files, just add it as a @property
+    to this class using the form.  So to add support for BIRD:
+      @property
+      def var_BIRD(self):
+        return <whatever this is>
+
+    You can return either a string or an iterable (e.g. a list or tuple).
+    """
+
+    def __init__(self, diff=()):
+        """Initialize.
+
+        Args:
+          diff: The list of files that changed.
+        """
+        self.diff = diff
+
+    def expand_vars(self, args):
+        """Perform place holder expansion on all of |args|.
+
+        Args:
+          args: The args to perform expansion on.
+
+        Returns:
+          The updated |args| list.
+        """
+        all_vars = set(self.vars())
+        replacements = dict((var, self.get(var)) for var in all_vars)
+
+        ret = []
+        for arg in args:
+            # First scan for exact matches
+            for key, val in replacements.items():
+                var = '${%s}' % (key,)
+                if arg == var:
+                    if isinstance(val, str):
+                        ret.append(val)
+                    else:
+                        ret.extend(val)
+                    # We break on first hit to avoid double expansion.
+                    break
+            else:
+                # If no exact matches, do an inline replacement.
+                def replace(m):
+                    val = self.get(m.group(1))
+                    if isinstance(val, str):
+                        return val
+                    else:
+                        return ' '.join(val)
+                ret.append(re.sub(r'\$\{(%s)\}' % ('|'.join(all_vars),),
+                                  replace, arg))
+
+        return ret
+
+    @classmethod
+    def vars(cls):
+        """Yield all replacement variable names."""
+        for key in dir(cls):
+            if key.startswith('var_'):
+                yield key[4:]
+
+    def get(self, var):
+        """Helper function to get the replacement |var| value."""
+        return getattr(self, 'var_%s' % (var,))
+
+    @property
+    def var_PREUPLOAD_COMMIT_MESSAGE(self):
+        """The git commit message."""
+        return os.environ.get('PREUPLOAD_COMMIT_MESSAGE', '')
+
+    @property
+    def var_PREUPLOAD_COMMIT(self):
+        """The git commit sha1."""
+        return os.environ.get('PREUPLOAD_COMMIT', '')
+
+    @property
+    def var_PREUPLOAD_FILES(self):
+        """List of files modified in this git commit."""
+        return [x.file for x in self.diff if x.status != 'D']
+
+    @property
+    def var_REPO_ROOT(self):
+        """The root of the repo checkout."""
+        return rh.git.find_repo_root()
+
+    @property
+    def var_BUILD_OS(self):
+        """The build OS (see _get_build_os_name for details)."""
+        return _get_build_os_name()
+
+
 class HookOptions(object):
     """Holder class for hook options."""
 
@@ -48,6 +142,12 @@ class HookOptions(object):
         self._args = args
         self._tool_paths = tool_paths
 
+    @staticmethod
+    def expand_vars(args, diff=()):
+        """Perform place holder expansion on all of |args|."""
+        replacer = Placeholders(diff=diff)
+        return replacer.expand_vars(args)
+
     def args(self, default_args=(), diff=()):
         """Gets the hook arguments, after performing place holder expansion.
 
@@ -62,18 +162,7 @@ class HookOptions(object):
         if not args:
             args = default_args
 
-        ret = []
-        for arg in args:
-            if arg == '${PREUPLOAD_FILES}':
-                ret.extend(x.file for x in diff if x.status != 'D')
-            elif arg == '${PREUPLOAD_COMMIT_MESSAGE}':
-                ret.append(os.environ['PREUPLOAD_COMMIT_MESSAGE'])
-            elif arg == '${PREUPLOAD_COMMIT}':
-                ret.append(os.environ['PREUPLOAD_COMMIT'])
-            else:
-                ret.append(arg)
-
-        return ret
+        return self.expand_vars(args, diff=diff)
 
     def tool_path(self, tool_name):
         """Gets the path in which the |tool_name| executable can be found.
@@ -92,17 +181,8 @@ class HookOptions(object):
         if tool_name not in self._tool_paths:
             return TOOL_PATHS[tool_name]
 
-        components = []
         tool_path = os.path.normpath(self._tool_paths[tool_name])
-        for component in tool_path.split(os.sep):
-            if component == '${REPO_ROOT}':
-                components.append(rh.git.find_repo_root())
-            elif component == '${BUILD_OS}':
-                components.append(_get_build_os_name())
-            else:
-                components.append(component)
-
-        return os.sep.join(components)
+        return self.expand_vars([tool_path])[0]
 
 
 def _run_command(cmd, **kwargs):
