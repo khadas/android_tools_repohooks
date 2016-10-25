@@ -23,7 +23,6 @@ when developing.
 from __future__ import print_function
 
 import argparse
-import collections
 import os
 import sys
 
@@ -38,6 +37,7 @@ if sys.path[0] != _path:
     sys.path.insert(0, _path)
 del _path
 
+import rh
 import rh.results
 import rh.config
 import rh.git
@@ -48,9 +48,6 @@ import rh.utils
 
 # Repohooks homepage.
 REPOHOOKS_URL = 'https://android.googlesource.com/platform/tools/repohooks/'
-
-
-Project = collections.namedtuple('Project', ['name', 'dir', 'remote'])
 
 
 class Output(object):
@@ -219,7 +216,7 @@ def _run_project_hooks(project_name, proj_dir=None,
     })
 
     output = Output(project_name, len(hooks))
-    project = Project(name=project_name, dir=proj_dir, remote=remote)
+    project = rh.Project(name=project_name, dir=proj_dir, remote=remote)
 
     if not commit_list:
         commit_list = rh.git.get_commits(
