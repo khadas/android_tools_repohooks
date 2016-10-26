@@ -286,6 +286,25 @@ def check_custom(project, commit, _desc, diff, options=None, **kwargs):
                       **kwargs)
 
 
+def check_bpfmt(project, commit, _desc, diff, options=None):
+    """Checks that Blueprint files are formatted with bpfmt."""
+    filtered = _filter_diff(diff, [r'\.bp$'])
+    if not filtered:
+        return None
+
+    bpfmt = options.tool_path('bpfmt')
+    cmd = [bpfmt, '-l'] + options.args((), filtered)
+    ret = []
+    for d in filtered:
+        data = rh.git.get_file_content(commit, d.file)
+        result = _run_command(cmd, input=data)
+        if result.output:
+            ret.append(rh.results.HookResult(
+                'bpfmt', project, commit, error=result.output,
+                files=(d.file,)))
+    return ret
+
+
 def check_checkpatch(project, commit, _desc, diff, options=None):
     """Run |diff| through the kernel's checkpatch.pl tool."""
     tool = get_helper_path('checkpatch.pl')
@@ -628,6 +647,7 @@ def check_android_test_mapping(project, commit, _desc, diff, options=None):
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
     'android_test_mapping_format': check_android_test_mapping,
+    'bpfmt': check_bpfmt,
     'checkpatch': check_checkpatch,
     'clang_format': check_clang_format,
     'commit_msg_bug_field': check_commit_msg_bug_field,
@@ -649,6 +669,7 @@ BUILTIN_HOOKS = {
 TOOL_PATHS = {
     'android-test-mapping-format':
         os.path.join(TOOLS_DIR, 'android_test_mapping_format.py'),
+    'bpfmt': 'bpfmt',
     'clang-format': 'clang-format',
     'cpplint': os.path.join(TOOLS_DIR, 'cpplint.py'),
     'git-clang-format': 'git-clang-format',
