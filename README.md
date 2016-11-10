@@ -222,9 +222,6 @@ These are notes for people updating the `pre-upload.py` hook itself:
   a lot.  Will need to consider a `PREUPLOAD.cfg` knob.
 * We need to add `pylint` tool to the AOSP manifest and use that local copy
   instead of relying on the version that is in $PATH.
-* `clang-format` diffs each change against the current working tree.  This works
-  well if a single change is being uploaded, but if multiple commits are being
-  uploaded, later commits in the chain will have false positives.
 * Should make file extension filters configurable.  All hooks currently declare
   their own list of files like `.cc` and `.py` and `.xml`.
 * Add more checkers.
