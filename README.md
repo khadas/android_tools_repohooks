@@ -82,8 +82,13 @@ A few environment variables are set so scripts don't need to discover things.
    e.g. `platform/tools/repohooks`
 * `REPO_PATH`: The path to the project relative to the root.
    e.g. `tools/repohooks`
-* `REPO_REMOTE`: The remote git URL.
-   e.g. `https://android.googlesource.com/platform/tools/repohooks`
+* `REPO_REMOTE`: The name of the git remote.
+   e.g. `aosp`.
+* `REPO_LREV`: The name of the remote revision, translated to a local tracking
+   branch. This is typically latest commit in the remote-tracking branch.
+   e.g. `ec044d3e9b608ce275f02092f86810a3ba13834e`
+* `REPO_RREV`: The remote revision.
+   e.g. `master`
 * `PREUPLOAD_COMMIT`: The commit that is currently being checked.
    e.g. `1f89dce0468448fa36f632d2fc52175cd6940a91`
 
