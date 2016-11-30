@@ -205,14 +205,17 @@ def _run_project_hooks(project_name, proj_dir=None,
     # Set up the environment like repo would with the forall command.
     try:
         remote = rh.git.get_upstream_remote()
+        upstream_branch = rh.git.get_upstream_branch()
     except rh.utils.RunCommandError as e:
         print('upstream remote cannot be found: %s' % (e,), file=sys.stderr)
         print('Did you run repo start?', file=sys.stderr)
         sys.exit(1)
     os.environ.update({
-        'REPO_PROJECT': project_name,
+        'REPO_LREV': rh.git.get_commit_for_ref(upstream_branch),
         'REPO_PATH': proj_dir,
+        'REPO_PROJECT': project_name,
         'REPO_REMOTE': remote,
+        'REPO_RREV': rh.git.get_remote_revision(upstream_branch, remote),
     })
 
     output = Output(project_name, len(hooks))
