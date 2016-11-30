@@ -70,6 +70,21 @@ def get_upstream_branch():
     return full_upstream.replace('heads', 'remotes/' + remote)
 
 
+def get_commit_for_ref(ref):
+    """Returns the latest commit for this ref."""
+    cmd = ['git', 'rev-parse', ref]
+    result = rh.utils.run_command(cmd, capture_output=True)
+    return result.output.strip()
+
+
+def get_remote_revision(ref, remote):
+    """Returns the remote revision for this ref."""
+    prefix = 'refs/remotes/%s/' % remote
+    if ref.startswith(prefix):
+        return ref[len(prefix):]
+    return ref
+
+
 def get_patch(commit):
     """Returns the patch for this commit."""
     cmd = ['git', 'format-patch', '--stdout', '-1', commit]
