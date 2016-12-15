@@ -148,6 +148,8 @@ canned hooks already included geared towards AOSP style guidelines.
 * `commit_msg_test_field`: Require a `Test:` line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
 * `gofmt`: Run Go code through `gofmt`.
+* `google_java_format`: Run Java code through
+  [`google-java-format`](https://github.com/google/google-java-format)
 * `jsonlint`: Verify JSON code is sane.
 * `pylint`: Run Python code through `pylint`.
 * `xmllint`: Run XML code through `xmllint`.
@@ -193,6 +195,8 @@ distros/versions.  The following tools are recognized:
 * `cpplint`: used for the `cpplint` builtin hook.
 * `git-clang-format`: used for the `clang_format` builtin hook.
 * `gofmt`: used for the `gofmt` builtin hook.
+* `google-java-format`: used for the `google_java_format` builtin hook.
+* `google-java-format-diff`: used for the `google_java_format` builtin hook.
 * `pylint`: used for the `pylint` builtin hook.
 
 See [Placeholders](#Placeholders) for variables you can expand automatically.
