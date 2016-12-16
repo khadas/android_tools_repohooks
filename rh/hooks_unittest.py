@@ -293,6 +293,12 @@ class BuiltinHooksTests(unittest.TestCase):
             self.project, 'commit', 'desc', (), options=self.options)
         self.assertEqual(ret, mock_check.return_value)
 
+    def test_google_java_format(self, mock_check, _mock_run):
+        """Verify the google_java_format builtin hook."""
+        ret = rh.hooks.check_google_java_format(
+            self.project, 'commit', 'desc', (), options=self.options)
+        self.assertEqual(ret, mock_check.return_value)
+
     def test_commit_msg_bug_field(self, _mock_check, _mock_run):
         """Verify the commit_msg_bug_field builtin hook."""
         # Check some good messages.
