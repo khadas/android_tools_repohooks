@@ -315,10 +315,13 @@ def check_google_java_format(project, commit, _desc, _diff, options=None):
     tool = get_helper_path('google-java-format.py')
     google_java_format = options.tool_path('google-java-format')
     google_java_format_diff = options.tool_path('google-java-format-diff')
-    cmd = [tool, '--google-java-format', google_java_format,
-           '--google-java-format-diff', google_java_format_diff,
-           '--commit', commit] + options.args()
-    return _check_cmd('google-java-format', project, commit, cmd)
+    tool_args = ['--google-java-format', google_java_format,
+                 '--google-java-format-diff', google_java_format_diff,
+                 '--commit', commit] + options.args()
+    cmd = [tool] + tool_args
+    fixup_func = _fixup_func_caller([tool, '--fix'] + tool_args)
+    return _check_cmd('google-java-format', project, commit, cmd,
+                      fixup_func=fixup_func)
 
 
 def check_commit_msg_bug_field(project, commit, desc, _diff, options=None):
