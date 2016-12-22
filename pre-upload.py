@@ -161,6 +161,37 @@ def _get_project_config():
     return config
 
 
+def _attempt_fixes(fixup_func_list, commit_list):
+    """Attempts to run |fixup_func_list| given |commit_list|."""
+    if len(fixup_func_list) != 1:
+        # Only single fixes will be attempted, since various fixes might
+        # interact with each other.
+        return
+
+    hook_name, commit, fixup_func = fixup_func_list[0]
+
+    if commit != commit_list[0]:
+        # If the commit is not at the top of the stack, git operations might be
+        # needed and might leave the working directory in a tricky state if the
+        # fix is attempted to run automatically (e.g. it might require manual
+        # merge conflict resolution). Refuse to run the fix in those cases.
+        return
+
+    prompt = ('An automatic fix can be attempted for the "%s" hook. '
+              'Do you want to run it?' % hook_name)
+    if not rh.terminal.boolean_prompt(prompt):
+        return
+
+    result = fixup_func()
+    if result:
+        print('Attempt to fix "%s" for commit "%s" failed: %s' %
+              (hook_name, commit, result),
+              file=sys.stderr)
+    else:
+        print('Fix successfully applied. Amend the current commit before '
+              'attempting to upload again.\n', file=sys.stderr)
+
+
 def _run_project_hooks(project_name, proj_dir=None,
                        commit_list=None):
     """For each project run its project specific hook from the hooks dictionary.
@@ -226,6 +257,7 @@ def _run_project_hooks(project_name, proj_dir=None,
             ignore_merged_commits=config.ignore_merged_commits)
 
     ret = True
+    fixup_func_list = []
 
     for commit in commit_list:
         # Mix in some settings for our hooks.
@@ -244,6 +276,13 @@ def _run_project_hooks(project_name, proj_dir=None,
             if error:
                 ret = False
                 output.hook_error(name, error)
+                for result in hook_results:
+                    if result.fixup_func:
+                        fixup_func_list.append((name, commit,
+                                                result.fixup_func))
+
+    if fixup_func_list:
+        _attempt_fixes(fixup_func_list, commit_list)
 
     output.finish()
     os.chdir(pwd)
