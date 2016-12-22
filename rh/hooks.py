@@ -293,15 +293,12 @@ def check_clang_format(project, commit, _desc, diff, options=None):
 def check_google_java_format(project, commit, _desc, _diff, options=None):
     """Run google-java-format on the commit."""
 
-    if options.args():
-        raise ValueError('google-java-format check takes no options')
-
     tool = get_helper_path('google-java-format.py')
     google_java_format = options.tool_path('google-java-format')
     google_java_format_diff = options.tool_path('google-java-format-diff')
     cmd = [tool, '--google-java-format', google_java_format,
            '--google-java-format-diff', google_java_format_diff,
-           '--commit', commit]
+           '--commit', commit] + options.args()
     return _check_cmd('google-java-format', project, commit, cmd)
 
 
