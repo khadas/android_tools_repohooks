@@ -136,3 +136,66 @@ def print_status_line(line, print_newline=False):
 
     sys.stderr.write(output)
     sys.stderr.flush()
+
+
+def get_input(prompt):
+    """Python 2/3 glue for raw_input/input differences."""
+    try:
+        return raw_input(prompt)
+    except NameError:
+        # Python 3 renamed raw_input() to input(), which is safe to call since
+        # it does not evaluate the input.
+        # pylint: disable=bad-builtin
+        return input(prompt)
+
+
+def boolean_prompt(prompt='Do you want to continue?', default=True,
+                   true_value='yes', false_value='no', prolog=None):
+    """Helper function for processing boolean choice prompts.
+
+    Args:
+      prompt: The question to present to the user.
+      default: Boolean to return if the user just presses enter.
+      true_value: The text to display that represents a True returned.
+      false_value: The text to display that represents a False returned.
+      prolog: The text to display before prompt.
+
+    Returns:
+      True or False.
+    """
+    true_value, false_value = true_value.lower(), false_value.lower()
+    true_text, false_text = true_value, false_value
+    if true_value == false_value:
+        raise ValueError('true_value and false_value must differ: got %r'
+                         % true_value)
+
+    if default:
+        true_text = true_text[0].upper() + true_text[1:]
+    else:
+        false_text = false_text[0].upper() + false_text[1:]
+
+    prompt = ('\n%s (%s/%s)? ' % (prompt, true_text, false_text))
+
+    if prolog:
+        prompt = ('\n%s\n%s' % (prolog, prompt))
+
+    while True:
+        try:
+            response = get_input(prompt).lower()
+        except EOFError:
+            # If the user hits CTRL+D, or stdin is disabled, use the default.
+            print()
+            response = None
+        except KeyboardInterrupt:
+            # If the user hits CTRL+C, just exit the process.
+            print()
+            raise
+
+        if not response:
+            return default
+        if true_value.startswith(response):
+            if not false_value.startswith(response):
+                return True
+            # common prefix between the two...
+        elif false_value.startswith(response):
+            return False
