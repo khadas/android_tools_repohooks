@@ -250,10 +250,26 @@ def _get_build_os_name():
         return 'linux-x86'
 
 
-def _check_cmd(hook_name, project, commit, cmd, **kwargs):
+def _fixup_func_caller(cmd, **kwargs):
+    """Wraps |cmd| around a callable automated fixup.
+
+    For hooks that support automatically fixing errors after running (e.g. code
+    formatters), this function provides a way to run |cmd| as the |fixup_func|
+    parameter in HookCommandResult.
+    """
+    def wrapper():
+        result = _run_command(cmd, **kwargs)
+        if result.returncode not in (None, 0):
+            return result.output
+        return None
+    return wrapper
+
+
+def _check_cmd(hook_name, project, commit, cmd, fixup_func=None, **kwargs):
     """Runs |cmd| and returns its result as a HookCommandResult."""
     return [rh.results.HookCommandResult(hook_name, project, commit,
-                                         _run_command(cmd, **kwargs))]
+                                         _run_command(cmd, **kwargs),
+                                         fixup_func=fixup_func)]
 
 
 # Where helper programs exist.
@@ -284,10 +300,13 @@ def check_clang_format(project, commit, _desc, diff, options=None):
     tool = get_helper_path('clang-format.py')
     clang_format = options.tool_path('clang-format')
     git_clang_format = options.tool_path('git-clang-format')
-    cmd = ([tool, '--clang-format', clang_format, '--git-clang-format',
-            git_clang_format] +
-           options.args(('--style', 'file', '--commit', commit), diff))
-    return _check_cmd('clang-format', project, commit, cmd)
+    tool_args = (['--clang-format', clang_format, '--git-clang-format',
+                  git_clang_format] +
+                 options.args(('--style', 'file', '--commit', commit), diff))
+    cmd = [tool] + tool_args
+    fixup_func = _fixup_func_caller([tool, '--fix'] + tool_args)
+    return _check_cmd('clang-format', project, commit, cmd,
+                      fixup_func=fixup_func)
 
 
 def check_google_java_format(project, commit, _desc, _diff, options=None):
