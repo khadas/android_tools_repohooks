@@ -44,6 +44,11 @@ def get_parser():
                         help='Fix any formatting errors automatically.')
     parser.add_argument('--commit', type=str, default='HEAD',
                         help='Specify the commit to validate.')
+    # While the formatter defaults to sorting imports, in the Android codebase,
+    # the standard import order doesn't match the formatter's, so flip the
+    # default to not sort imports, while letting callers override as desired.
+    parser.add_argument('--sort-imports', action='store_true',
+                        help='If true, imports will be sorted.')
     return parser
 
 
@@ -76,6 +81,8 @@ def main(argv):
     cmd = [opts.google_java_format_diff, '-p1', '--aosp']
     if opts.fix:
         cmd.extend(['-i'])
+    if not opts.sort_imports:
+        cmd.extend(['--skip-sorting-imports'])
 
     stdout = rh.utils.run_command(cmd,
                                   input=diff,
