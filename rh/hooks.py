@@ -391,12 +391,12 @@ Test: make test-art
 Test: manual - took a photo
 Test: refactoring CL. Existing unit tests still pass.
 
-Check the Gerrit history for more examples. It's a free-form field, so we urge
+Check the git history for more examples. It's a free-form field, so we urge
 you to develop conventions that make sense for your project. Note that many
 projects use exact test commands, which are perfectly fine.
 
 Adding good automated tests with new code is critical to our goals of keeping
-Android stable and constantly improving Android quality. Please use Test: to
+the system stable and constantly improving quality. Please use Test: to
 highlight this area of your development. And reviewers, please insist on
 high-quality Test: descriptions.
 """
