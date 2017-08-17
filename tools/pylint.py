@@ -45,12 +45,16 @@ def main(argv):
     parser = get_parser()
     opts, unknown = parser.parse_known_args(argv)
 
-    pylintrc = DEFAULT_PYLINTRC_PATH if not opts.no_rcfile else None
-
     cmd = [opts.executable_path]
-    if pylintrc:
-        # If we pass a non-existent rcfile to pylint, it'll happily ignore it.
-        assert os.path.exists(pylintrc), 'Could not find %s' % pylintrc
+    if not opts.no_rcfile:
+        # We assume pylint is running in the top directory of the project,
+        # so load the pylintrc file from there if it's available.
+        pylintrc = os.path.abspath('pylintrc')
+        if not os.path.exists(pylintrc):
+            pylintrc = DEFAULT_PYLINTRC_PATH
+            # If we pass a non-existent rcfile to pylint, it'll happily ignore
+            # it.
+            assert os.path.exists(pylintrc), 'Could not find %s' % pylintrc
         cmd += ['--rcfile', pylintrc]
 
     cmd += unknown + opts.files
