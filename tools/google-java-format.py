@@ -78,7 +78,7 @@ def main(argv):
 
     # TODO: Delegate to the tool once this issue is resolved:
     # https://github.com/google/google-java-format/issues/107
-    diff_cmd = ['git', 'diff', '-U0', '%s^!' % opts.commit]
+    diff_cmd = ['git', 'diff', '--no-ext-diff', '-U0', '%s^!' % opts.commit]
     diff = rh.utils.run_command(diff_cmd, capture_output=True).output
 
     cmd = [opts.google_java_format_diff, '-p1', '--aosp']
