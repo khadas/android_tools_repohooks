@@ -340,8 +340,8 @@ def check_commit_msg_bug_field(project, commit, desc, _diff, options=None):
             found.append(line)
 
     if not found:
-        error = ('Commit message is missing a "%s:" line.  It must match:\n'
-                 '%s') % (field, regex)
+        error = ('Commit message is missing a "%s:" line.  It must match the\n'
+                 'following case-sensitive regex:\n\n    %s') % (field, regex)
     else:
         return
 
@@ -364,8 +364,8 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
             found.append(line)
 
     if len(found) == 0:
-        error = ('Commit message is missing a "%s:" line.  It must match:\n'
-                 '%s') % (field, regex)
+        error = ('Commit message is missing a "%s:" line.  It must match the\n'
+                 'following case-sensitive regex:\n\n    %s') % (field, regex)
     elif len(found) > 1:
         error = ('Commit message has too many "%s:" lines.  There can be only '
                  'one.') % (field,)
@@ -376,8 +376,10 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
                                   project, commit, error=error)]
 
 
-TEST_MSG = """Commit message is missing a "Test:" line.  It must match:
-%s
+TEST_MSG = """Commit message is missing a "Test:" line.  It must match the
+following case-sensitive regex:
+
+    %s
 
 The Test: stanza is free-form and should describe how you tested your change.
 As a CL author, you'll have a consistent place to describe the testing strategy
