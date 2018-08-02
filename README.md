@@ -145,6 +145,8 @@ canned hooks already included geared towards AOSP style guidelines.
   `file`.
 * `commit_msg_bug_field`: Require a valid `Bug:` line.
 * `commit_msg_changeid_field`: Require a valid `Change-Id:` Gerrit line.
+* `commit_msg_prebuilt_apk_fields`: Require badging and build information for
+  prebuilt APKs.
 * `commit_msg_test_field`: Require a `Test:` line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
 * `gofmt`: Run Go code through `gofmt`.
