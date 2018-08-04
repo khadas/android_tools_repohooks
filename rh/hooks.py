@@ -376,6 +376,63 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
                                   project, commit, error=error)]
 
 
+PREBUILT_APK_MSG = """Commit message is missing required prebuilt APK
+information.  To generate the information, use the aapt tool to dump badging
+information of the APKs being uploaded, specify where the APK was built, and
+specify whether the APKs are suitable for release:
+
+    for apk in $(find . -name '*.apk' | sort); do
+        echo "${apk}"
+        ${AAPT} dump badging "${apk}" |
+            grep -iE "(package: |sdkVersion:|targetSdkVersion:)" |
+            sed -e "s/' /'\\n/g"
+        echo
+    done
+
+It must match the following case-sensitive multiline regex searches:
+
+    %s
+
+For more information, see go/platform-prebuilt and go/android-prebuilt.
+
+"""
+
+
+def check_commit_msg_prebuilt_apk_fields(project, commit, desc, diff,
+                                         options=None):
+    """Check that prebuilt APK commits contain the required lines."""
+
+    if options.args():
+        raise ValueError('prebuilt apk check takes no options')
+
+    filtered = _filter_diff(diff, [r'\.apk$'])
+    if not filtered:
+        return
+
+    regexes = [
+        r'^package: .*$',
+        r'^sdkVersion:.*$',
+        r'^targetSdkVersion:.*$',
+        r'^Built here:.*$',
+        (r'^This build IS( NOT)? suitable for'
+         r'( preview|( preview or)? public) release'
+         r'( but IS NOT suitable for public release)?\.$')
+    ]
+
+    missing = []
+    for regex in regexes:
+        if not re.search(regex, desc, re.MULTILINE):
+            missing.append(regex)
+
+    if missing:
+        error = PREBUILT_APK_MSG % '\n    '.join(missing)
+    else:
+        return
+
+    return [rh.results.HookResult('commit msg: "prebuilt apk:" check',
+                                  project, commit, error=error)]
+
+
 TEST_MSG = """Commit message is missing a "Test:" line.  It must match the
 following case-sensitive regex:
 
@@ -546,6 +603,7 @@ BUILTIN_HOOKS = {
     'clang_format': check_clang_format,
     'commit_msg_bug_field': check_commit_msg_bug_field,
     'commit_msg_changeid_field': check_commit_msg_changeid_field,
+    'commit_msg_prebuilt_apk_fields': check_commit_msg_prebuilt_apk_fields,
     'commit_msg_test_field': check_commit_msg_test_field,
     'cpplint': check_cpplint,
     'gofmt': check_gofmt,
