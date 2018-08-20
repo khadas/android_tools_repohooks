@@ -596,9 +596,24 @@ def check_xmllint(project, commit, _desc, diff, options=None):
     return _check_cmd('xmllint', project, commit, cmd)
 
 
+def check_android_test_mapping(project, commit, _desc, diff, options=None):
+    """Verify Android TEST_MAPPING files are valid."""
+    if options.args():
+        raise ValueError('Android TEST_MAPPING check takes no options')
+    filtered = _filter_diff(diff, [r'(^|.*/)TEST_MAPPING$'])
+    if not filtered:
+        return
+
+    testmapping_format = options.tool_path('android-test-mapping-format')
+    cmd = [testmapping_format] + options.args(
+        (project.dir, '${PREUPLOAD_FILES}',), filtered)
+    return _check_cmd('android-test-mapping-format', project, commit, cmd)
+
+
 # Hooks that projects can opt into.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
+    'android_test_mapping_format': check_android_test_mapping,
     'checkpatch': check_checkpatch,
     'clang_format': check_clang_format,
     'commit_msg_bug_field': check_commit_msg_bug_field,
@@ -616,6 +631,8 @@ BUILTIN_HOOKS = {
 # Additional tools that the hooks can call with their default values.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 TOOL_PATHS = {
+    'android-test-mapping-format':
+        os.path.join(TOOLS_DIR, 'android_test_mapping_format.py'),
     'clang-format': 'clang-format',
     'cpplint': os.path.join(TOOLS_DIR, 'cpplint.py'),
     'git-clang-format': 'git-clang-format',
