@@ -502,6 +502,20 @@ class BuiltinHooksTests(unittest.TestCase):
         self._test_file_filter(mock_check, rh.hooks.check_xmllint,
                                ('foo.xml',))
 
+    def test_android_test_mapping_format(self, mock_check, _mock_run):
+        """Verify the android_test_mapping_format builtin hook."""
+        # First call should do nothing as there are no files to check.
+        ret = rh.hooks.check_android_test_mapping(
+            self.project, 'commit', 'desc', (), options=self.options)
+        self.assertIsNone(ret)
+        self.assertFalse(mock_check.called)
+
+        # Second call will have some results.
+        diff = [rh.git.RawDiffEntry(file='TEST_MAPPING')]
+        ret = rh.hooks.check_android_test_mapping(
+            self.project, 'commit', 'desc', diff, options=self.options)
+        self.assertIsNotNone(ret)
+
 
 if __name__ == '__main__':
     unittest.main()
