@@ -32,6 +32,7 @@ IMPORTS = 'imports'
 NAME = 'name'
 OPTIONS = 'options'
 PATH = 'path'
+HOST = 'host'
 
 
 class Error(Exception):
@@ -79,6 +80,11 @@ def _validate_test(test, test_mapping_file):
             'Invalid test config in test mapping file %s. test config must '
             'a `name` setting. Failed test config: %s' %
             (test_mapping_file, test))
+    if not isinstance(test.get(HOST, False), bool):
+        raise InvalidTestMappingError(
+            'Invalid test config in test mapping file %s. `host` setting in '
+            'test config can only have boolean value of `true` or `false`. '
+            'Failed test config: %s' % (test_mapping_file, test))
     for option in test.get(OPTIONS, []):
         if len(option) != 1:
             raise InvalidTestMappingError(
