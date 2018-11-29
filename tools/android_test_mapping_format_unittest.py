@@ -36,7 +36,8 @@ VALID_TEST_MAPPING = """
   ],
   "postsubmit": [
     {
-      "name": "CtsWindowManagerDeviceTestCases"
+      "name": "CtsWindowManagerDeviceTestCases",
+      "host": true
     }
   ],
   "imports": [
@@ -60,7 +61,18 @@ BAD_TEST_WRONG_KEY = """
     {
       "bad_name": "CtsWindowManagerDeviceTestCases",
     }
-  ],
+  ]
+}
+"""
+
+BAD_TEST_WRONG_HOST_VALUE = """
+{
+  "presubmit": [
+    {
+      "name": "CtsWindowManagerDeviceTestCases",
+      "host": "bad_value"
+    }
+  ]
 }
 """
 
@@ -123,6 +135,15 @@ class AndroidTestMappingFormatTests(unittest.TestCase):
         """Verify that test config using wrong key can be detected."""
         with open(self.test_mapping_file, 'w') as f:
             f.write(BAD_TEST_WRONG_KEY)
+        self.assertRaises(
+            android_test_mapping_format.InvalidTestMappingError,
+            android_test_mapping_format.process_file,
+            self.test_mapping_file)
+
+    def test_invalid_test_mapping_wrong_test_value(self):
+        """Verify that test config using wrong host value can be detected."""
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(BAD_TEST_WRONG_HOST_VALUE)
         self.assertRaises(
             android_test_mapping_format.InvalidTestMappingError,
             android_test_mapping_format.process_file,
