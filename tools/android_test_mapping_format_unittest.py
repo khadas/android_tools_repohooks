@@ -37,7 +37,8 @@ VALID_TEST_MAPPING = """
   "postsubmit": [
     {
       "name": "CtsWindowManagerDeviceTestCases",
-      "host": true
+      "host": true,
+      "preferred_targets": ["a", "b"]
     }
   ],
   "imports": [
@@ -59,7 +60,7 @@ BAD_TEST_WRONG_KEY = """
 {
   "presubmit": [
     {
-      "bad_name": "CtsWindowManagerDeviceTestCases",
+      "bad_name": "CtsWindowManagerDeviceTestCases"
     }
   ]
 }
@@ -71,6 +72,29 @@ BAD_TEST_WRONG_HOST_VALUE = """
     {
       "name": "CtsWindowManagerDeviceTestCases",
       "host": "bad_value"
+    }
+  ]
+}
+"""
+
+
+BAD_TEST_WRONG_PREFERRED_TARGETS_VALUE_NONE_LIST = """
+{
+  "presubmit": [
+    {
+      "name": "CtsWindowManagerDeviceTestCases",
+      "preferred_targets": "bad_value"
+    }
+  ]
+}
+"""
+
+BAD_TEST_WRONG_PREFERRED_TARGETS_VALUE_WRONG_TYPE = """
+{
+  "presubmit": [
+    {
+      "name": "CtsWindowManagerDeviceTestCases",
+      "preferred_targets": ["bad_value", 123]
     }
   ]
 }
@@ -88,7 +112,7 @@ BAD_TEST_WRONG_OPTION = """
         }
       ]
     }
-  ],
+  ]
 }
 """
 
@@ -131,6 +155,14 @@ class AndroidTestMappingFormatTests(unittest.TestCase):
             f.write(VALID_TEST_MAPPING)
         android_test_mapping_format.process_file(self.test_mapping_file)
 
+    def test_invalid_test_mapping_bad_json(self):
+        """Verify that TEST_MAPPING file with bad json can be detected."""
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(BAD_JSON)
+        self.assertRaises(
+            ValueError, android_test_mapping_format.process_file,
+            self.test_mapping_file)
+
     def test_invalid_test_mapping_wrong_test_key(self):
         """Verify that test config using wrong key can be detected."""
         with open(self.test_mapping_file, 'w') as f:
@@ -144,6 +176,21 @@ class AndroidTestMappingFormatTests(unittest.TestCase):
         """Verify that test config using wrong host value can be detected."""
         with open(self.test_mapping_file, 'w') as f:
             f.write(BAD_TEST_WRONG_HOST_VALUE)
+        self.assertRaises(
+            android_test_mapping_format.InvalidTestMappingError,
+            android_test_mapping_format.process_file,
+            self.test_mapping_file)
+
+    def test_invalid_test_mapping_wrong_preferred_targets_value(self):
+        """Verify invalid preferred_targets are rejected."""
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(BAD_TEST_WRONG_PREFERRED_TARGETS_VALUE_NONE_LIST)
+        self.assertRaises(
+            android_test_mapping_format.InvalidTestMappingError,
+            android_test_mapping_format.process_file,
+            self.test_mapping_file)
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(BAD_TEST_WRONG_PREFERRED_TARGETS_VALUE_WRONG_TYPE)
         self.assertRaises(
             android_test_mapping_format.InvalidTestMappingError,
             android_test_mapping_format.process_file,
