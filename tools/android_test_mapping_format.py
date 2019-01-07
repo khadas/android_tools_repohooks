@@ -36,6 +36,7 @@ OPTIONS = 'options'
 PATH = 'path'
 HOST = 'host'
 PREFERRED_TARGETS = 'preferred_targets'
+FILE_PATTERNS = 'file_patterns'
 TEST_MAPPING_URL = (
     'https://source.android.com/compatibility/tests/development/'
     'test-mapping')
@@ -96,6 +97,13 @@ def _validate_test(test, test_mapping_file):
             any(not isinstance(t, basestring) for t in preferred_targets)):
         raise InvalidTestMappingError(
             'Invalid test config in test mapping file %s. `preferred_targets` '
+            'setting in test config can only be a list of strings. Failed test '
+            'config: %s' % (test_mapping_file, test))
+    file_patterns = test.get(FILE_PATTERNS, [])
+    if (not isinstance(file_patterns, list) or
+            any(not isinstance(p, basestring) for p in file_patterns)):
+        raise InvalidTestMappingError(
+            'Invalid test config in test mapping file %s. `file_patterns` '
             'setting in test config can only be a list of strings. Failed test '
             'config: %s' % (test_mapping_file, test))
     for option in test.get(OPTIONS, []):
