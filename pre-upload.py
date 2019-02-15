@@ -63,17 +63,24 @@ class Output(object):
     FAILED = COLOR.color(COLOR.RED, 'FAILED')
     WARNING = COLOR.color(COLOR.YELLOW, 'WARNING')
 
-    def __init__(self, project_name, num_hooks):
+    def __init__(self, project_name):
         """Create a new Output object for a specified project.
 
         Args:
           project_name: name of project.
-          num_hooks: number of hooks to be run.
         """
         self.project_name = project_name
-        self.num_hooks = num_hooks
+        self.num_hooks = None
         self.hook_index = 0
         self.success = True
+
+    def set_num_hooks(self, num_hooks):
+        """Keep track of how many hooks we'll be running.
+
+        Args:
+          num_hooks: number of hooks to be run.
+        """
+        self.num_hooks = num_hooks
 
     def commit_start(self, commit, commit_summary):
         """Emit status for new commit.
@@ -214,14 +221,13 @@ def _attempt_fixes(fixup_func_list, commit_list):
               'attempting to upload again.\n', file=sys.stderr)
 
 
-def _run_project_hooks(project_name, proj_dir=None,
-                       commit_list=None):
-    """For each project run its project specific hook from the hooks dictionary.
+def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
+    """Run the project-specific hooks in the cwd.
 
     Args:
-      project_name: The name of project to run hooks for.
-      proj_dir: If non-None, this is the directory the project is in.  If None,
-          we'll ask repo.
+      project_name: The name of this project.
+      proj_dir: The directory for this project (for passing on in metadata).
+      output: Helper for summarizing output/errors to the user.
       commit_list: A list of commits to run hooks against.  If None or empty
           list then we'll automatically get the list of commits that would be
           uploaded.
@@ -229,26 +235,6 @@ def _run_project_hooks(project_name, proj_dir=None,
     Returns:
       False if any errors were found, else True.
     """
-    if proj_dir is None:
-        cmd = ['repo', 'forall', project_name, '-c', 'pwd']
-        result = rh.utils.run_command(cmd, capture_output=True)
-        proj_dirs = result.output.split()
-        if len(proj_dirs) == 0:
-            print('%s cannot be found.' % project_name, file=sys.stderr)
-            print('Please specify a valid project.', file=sys.stderr)
-            return False
-        if len(proj_dirs) > 1:
-            print('%s is associated with multiple directories.' % project_name,
-                  file=sys.stderr)
-            print('Please specify a directory to help disambiguate.',
-                  file=sys.stderr)
-            return False
-        proj_dir = proj_dirs[0]
-
-    pwd = os.getcwd()
-    # Hooks assume they are run from the root of the project.
-    os.chdir(proj_dir)
-
     # If the repo has no pre-upload hooks enabled, then just return.
     config = _get_project_config()
     if not config:
@@ -256,6 +242,8 @@ def _run_project_hooks(project_name, proj_dir=None,
     hooks = list(config.callable_hooks())
     if not hooks:
         return True
+
+    output.set_num_hooks(len(hooks))
 
     # Set up the environment like repo would with the forall command.
     try:
@@ -273,7 +261,6 @@ def _run_project_hooks(project_name, proj_dir=None,
         'REPO_RREV': rh.git.get_remote_revision(upstream_branch, remote),
     })
 
-    output = Output(project_name, len(hooks))
     project = rh.Project(name=project_name, dir=proj_dir, remote=remote)
 
     if not commit_list:
@@ -311,9 +298,50 @@ def _run_project_hooks(project_name, proj_dir=None,
     if fixup_func_list:
         _attempt_fixes(fixup_func_list, commit_list)
 
-    output.finish()
-    os.chdir(pwd)
     return ret
+
+
+def _run_project_hooks(project_name, proj_dir=None, commit_list=None):
+    """Run the project-specific hooks in |proj_dir|.
+
+    Args:
+      project_name: The name of project to run hooks for.
+      proj_dir: If non-None, this is the directory the project is in.  If None,
+          we'll ask repo.
+      commit_list: A list of commits to run hooks against.  If None or empty
+          list then we'll automatically get the list of commits that would be
+          uploaded.
+
+    Returns:
+      False if any errors were found, else True.
+    """
+    output = Output(project_name)
+
+    if proj_dir is None:
+        cmd = ['repo', 'forall', project_name, '-c', 'pwd']
+        result = rh.utils.run_command(cmd, capture_output=True)
+        proj_dirs = result.output.split()
+        if len(proj_dirs) == 0:
+            print('%s cannot be found.' % project_name, file=sys.stderr)
+            print('Please specify a valid project.', file=sys.stderr)
+            return False
+        if len(proj_dirs) > 1:
+            print('%s is associated with multiple directories.' % project_name,
+                  file=sys.stderr)
+            print('Please specify a directory to help disambiguate.',
+                  file=sys.stderr)
+            return False
+        proj_dir = proj_dirs[0]
+
+    pwd = os.getcwd()
+    try:
+        # Hooks assume they are run from the root of the project.
+        os.chdir(proj_dir)
+        return _run_project_hooks_in_cwd(project_name, proj_dir, output,
+                                         commit_list=commit_list)
+    finally:
+        output.finish()
+        os.chdir(pwd)
 
 
 def main(project_list, worktree_list=None, **_kwargs):
