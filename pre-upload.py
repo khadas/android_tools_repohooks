@@ -329,7 +329,7 @@ def _run_project_hooks(project_name, proj_dir=None, commit_list=None):
         cmd = ['repo', 'forall', project_name, '-c', 'pwd']
         result = rh.utils.run_command(cmd, capture_output=True)
         proj_dirs = result.output.split()
-        if len(proj_dirs) == 0:
+        if not proj_dirs:
             print('%s cannot be found.' % project_name, file=sys.stderr)
             print('Please specify a valid project.', file=sys.stderr)
             return False
@@ -449,8 +449,7 @@ def direct_main(argv):
     if _run_project_hooks(opts.project, proj_dir=opts.dir,
                           commit_list=opts.commits):
         return 0
-    else:
-        return 1
+    return 1
 
 
 if __name__ == '__main__':
