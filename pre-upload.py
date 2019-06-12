@@ -179,7 +179,7 @@ def _get_project_config():
                                            global_paths=global_paths)
     except rh.config.ValidationError as e:
         print('invalid config file: %s' % (e,), file=sys.stderr)
-        sys.exit(1)
+        return None
     return config
 
 
@@ -236,13 +236,13 @@ def _run_project_hooks(project_name, proj_dir=None,
         if len(proj_dirs) == 0:
             print('%s cannot be found.' % project_name, file=sys.stderr)
             print('Please specify a valid project.', file=sys.stderr)
-            return 0
+            return False
         if len(proj_dirs) > 1:
             print('%s is associated with multiple directories.' % project_name,
                   file=sys.stderr)
             print('Please specify a directory to help disambiguate.',
                   file=sys.stderr)
-            return 0
+            return False
         proj_dir = proj_dirs[0]
 
     pwd = os.getcwd()
@@ -251,6 +251,8 @@ def _run_project_hooks(project_name, proj_dir=None,
 
     # If the repo has no pre-upload hooks enabled, then just return.
     config = _get_project_config()
+    if not config:
+        return False
     hooks = list(config.callable_hooks())
     if not hooks:
         return True
@@ -262,7 +264,7 @@ def _run_project_hooks(project_name, proj_dir=None,
     except rh.utils.RunCommandError as e:
         print('upstream remote cannot be found: %s' % (e,), file=sys.stderr)
         print('Did you run repo start?', file=sys.stderr)
-        sys.exit(1)
+        return False
     os.environ.update({
         'REPO_LREV': rh.git.get_commit_for_ref(upstream_branch),
         'REPO_PATH': proj_dir,
