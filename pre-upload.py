@@ -105,19 +105,16 @@ class Output(object):
         rh.terminal.print_status_line(status_line)
 
     def hook_error(self, hook_name, error):
-        """Print an error.
+        """Print an error for a single hook.
 
         Args:
           hook_name: name of the hook.
           error: error string.
         """
-        status_line = '[%s] %s' % (self.FAILED, hook_name)
-        rh.terminal.print_status_line(status_line, print_newline=True)
-        print(error, file=sys.stderr)
-        self.success = False
+        self.error(hook_name, error)
 
     def hook_warning(self, hook_name, warning):
-        """Print a warning.
+        """Print a warning for a single hook.
 
         Args:
           hook_name: name of the hook.
@@ -127,8 +124,20 @@ class Output(object):
         rh.terminal.print_status_line(status_line, print_newline=True)
         print(warning, file=sys.stderr)
 
+    def error(self, header, error):
+        """Print a general error.
+
+        Args:
+          header: A unique identifier for the source of this error.
+          error: error string.
+        """
+        status_line = '[%s] %s' % (self.FAILED, header)
+        rh.terminal.print_status_line(status_line, print_newline=True)
+        print(error, file=sys.stderr)
+        self.success = False
+
     def finish(self):
-        """Print repohook summary."""
+        """Print summary for all the hooks."""
         status_line = '[%s] repohooks for %s %s' % (
             self.PASSED if self.success else self.FAILED,
             self.project_name,
@@ -181,13 +190,7 @@ def _get_project_config():
         # Load the config for this git repo.
         '.',
     )
-    try:
-        config = rh.config.PreSubmitConfig(paths=paths,
-                                           global_paths=global_paths)
-    except rh.config.ValidationError as e:
-        print('invalid config file: %s' % (e,), file=sys.stderr)
-        return None
-    return config
+    return rh.config.PreSubmitConfig(paths=paths, global_paths=global_paths)
 
 
 def _attempt_fixes(fixup_func_list, commit_list):
@@ -235,10 +238,13 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
     Returns:
       False if any errors were found, else True.
     """
-    # If the repo has no pre-upload hooks enabled, then just return.
-    config = _get_project_config()
-    if not config:
+    try:
+        config = _get_project_config()
+    except rh.config.ValidationError as e:
+        output.error('Loading config files', str(e))
         return False
+
+    # If the repo has no pre-upload hooks enabled, then just return.
     hooks = list(config.callable_hooks())
     if not hooks:
         return True
@@ -250,9 +256,11 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
         remote = rh.git.get_upstream_remote()
         upstream_branch = rh.git.get_upstream_branch()
     except rh.utils.RunCommandError as e:
-        print('upstream remote cannot be found: %s' % (e,), file=sys.stderr)
-        print('Did you run repo start?', file=sys.stderr)
+        output.error('Upstream remote/tracking branch lookup',
+                     '%s\nDid you run repo start?  Is your HEAD detached?' %
+                     (e,))
         return False
+
     os.environ.update({
         'REPO_LREV': rh.git.get_commit_for_ref(upstream_branch),
         'REPO_PATH': proj_dir,
@@ -366,6 +374,10 @@ def main(project_list, worktree_list=None, **_kwargs):
     for project, worktree in zip(project_list, worktree_list):
         if not _run_project_hooks(project, proj_dir=worktree):
             found_error = True
+            # If a repo had failures, add a blank line to help break up the
+            # output.  If there were no failures, then the output should be
+            # very minimal, so we don't add it then.
+            print('', file=sys.stderr)
 
     if found_error:
         color = rh.terminal.Color()
