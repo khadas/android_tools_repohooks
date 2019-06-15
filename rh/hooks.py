@@ -538,18 +538,33 @@ def check_json(project, commit, _desc, diff, options=None):
     return ret
 
 
-def check_pylint(project, commit, _desc, diff, options=None):
+def _check_pylint(project, commit, _desc, diff, extra_args=None, options=None):
     """Run pylint."""
     filtered = _filter_diff(diff, [r'\.py$'])
     if not filtered:
         return
 
+    if extra_args is None:
+        extra_args = []
+
     pylint = options.tool_path('pylint')
     cmd = [
         get_helper_path('pylint.py'),
         '--executable-path', pylint,
-    ] + options.args(('${PREUPLOAD_FILES}',), filtered)
+    ] + extra_args + options.args(('${PREUPLOAD_FILES}',), filtered)
     return _check_cmd('pylint', project, commit, cmd)
+
+
+def check_pylint2(project, commit, desc, diff, options=None):
+    """Run pylint through Python 2."""
+    return _check_pylint(project, commit, desc, diff, options=options)
+
+
+def check_pylint3(project, commit, desc, diff, options=None):
+    """Run pylint through Python 3."""
+    return _check_pylint(project, commit, desc, diff,
+                         extra_args=['--executable-path=pylint3'],
+                         options=options)
 
 
 def check_xmllint(project, commit, _desc, diff, options=None):
@@ -624,7 +639,9 @@ BUILTIN_HOOKS = {
     'gofmt': check_gofmt,
     'google_java_format': check_google_java_format,
     'jsonlint': check_json,
-    'pylint': check_pylint,
+    'pylint': check_pylint2,
+    'pylint2': check_pylint2,
+    'pylint3': check_pylint3,
     'xmllint': check_xmllint,
 }
 
