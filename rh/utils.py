@@ -34,6 +34,7 @@ del _path
 # pylint: disable=wrong-import-position
 import rh.shell
 import rh.signals
+from rh.sixish import string_types
 
 
 class CommandResult(object):
@@ -143,12 +144,12 @@ def sudo_run_command(cmd, user='root', **kwargs):
     extra_env = kwargs.pop('extra_env', None)
     extra_env = {} if extra_env is None else extra_env.copy()
 
-    sudo_cmd.extend('%s=%s' % (k, v) for k, v in extra_env.iteritems())
+    sudo_cmd.extend('%s=%s' % (k, v) for k, v in extra_env.items())
 
     # Finally, block people from passing options to sudo.
     sudo_cmd.append('--')
 
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, string_types):
         # We need to handle shell ourselves so the order is correct:
         #  $ sudo [sudo args] -- bash -c '[shell command]'
         # If we let RunCommand take care of it, we'd end up with:
@@ -325,8 +326,13 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
     kill_timeout = float(kill_timeout)
 
     def _get_tempfile():
+        kwargs = {}
+        if sys.version_info.major < 3:
+            kwargs['bufsize'] = 0
+        else:
+            kwargs['buffering'] = 0
         try:
-            return tempfile.TemporaryFile(bufsize=0)
+            return tempfile.TemporaryFile(**kwargs)
         except EnvironmentError as e:
             if e.errno != errno.ENOENT:
                 raise
@@ -335,7 +341,7 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
             # issue in this particular case since our usage gurantees deletion,
             # and since this is primarily triggered during hard cgroups
             # shutdown.
-            return tempfile.TemporaryFile(bufsize=0, dir='/tmp')
+            return tempfile.TemporaryFile(dir='/tmp', **kwargs)
 
     # Modify defaults based on parameters.
     # Note that tempfiles must be unbuffered else attempts to read
@@ -364,13 +370,13 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
 
     # If input is a string, we'll create a pipe and send it through that.
     # Otherwise we assume it's a file object that can be read from directly.
-    if isinstance(input, basestring):
+    if isinstance(input, string_types):
         stdin = subprocess.PIPE
     elif input is not None:
         stdin = input
         input = None
 
-    if isinstance(cmd, basestring):
+    if isinstance(cmd, string_types):
         if not shell:
             raise Exception('Cannot run a string command without a shell')
         cmd = ['/bin/bash', '-c', cmd]
@@ -456,61 +462,3 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
 
     return cmd_result
 # pylint: enable=redefined-builtin
-
-
-def collection(classname, **kwargs):
-    """Create a new class with mutable named members.
-
-    This is like collections.namedtuple, but mutable.  Also similar to the
-    python 3.3 types.SimpleNamespace.
-
-    Example:
-      # Declare default values for this new class.
-      Foo = collection('Foo', a=0, b=10)
-      # Create a new class but set b to 4.
-      foo = Foo(b=4)
-      # Print out a (will be the default 0) and b (will be 4).
-      print('a = %i, b = %i' % (foo.a, foo.b))
-    """
-
-    def sn_init(self, **kwargs):
-        """The new class's __init__ function."""
-        # First verify the kwargs don't have excess settings.
-        valid_keys = set(self.__slots__[1:])
-        these_keys = set(kwargs.keys())
-        invalid_keys = these_keys - valid_keys
-        if invalid_keys:
-            raise TypeError('invalid keyword arguments for this object: %r' %
-                            invalid_keys)
-
-        # Now initialize this object.
-        for k in valid_keys:
-            setattr(self, k, kwargs.get(k, self.__defaults__[k]))
-
-    def sn_repr(self):
-        """The new class's __repr__ function."""
-        return '%s(%s)' % (classname, ', '.join(
-            '%s=%r' % (k, getattr(self, k)) for k in self.__slots__[1:]))
-
-    # Give the new class a unique name and then generate the code for it.
-    classname = 'Collection_%s' % classname
-    expr = '\n'.join((
-        'class %(classname)s(object):',
-        '  __slots__ = ["__defaults__", "%(slots)s"]',
-        '  __defaults__ = {}',
-    )) % {
-        'classname': classname,
-        'slots': '", "'.join(sorted(str(k) for k in kwargs)),
-    }
-
-    # Create the class in a local namespace as exec requires.
-    namespace = {}
-    exec expr in namespace  # pylint: disable=exec-used
-    new_class = namespace[classname]
-
-    # Bind the helpers.
-    new_class.__defaults__ = kwargs.copy()
-    new_class.__init__ = sn_init
-    new_class.__repr__ = sn_repr
-
-    return new_class
