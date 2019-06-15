@@ -495,7 +495,17 @@ class BuiltinHooksTests(unittest.TestCase):
 
     def test_pylint(self, mock_check, _mock_run):
         """Verify the pylint builtin hook."""
-        self._test_file_filter(mock_check, rh.hooks.check_pylint,
+        self._test_file_filter(mock_check, rh.hooks.check_pylint2,
+                               ('foo.py',))
+
+    def test_pylint2(self, mock_check, _mock_run):
+        """Verify the pylint2 builtin hook."""
+        self._test_file_filter(mock_check, rh.hooks.check_pylint2,
+                               ('foo.py',))
+
+    def test_pylint3(self, mock_check, _mock_run):
+        """Verify the pylint3 builtin hook."""
+        self._test_file_filter(mock_check, rh.hooks.check_pylint3,
                                ('foo.py',))
 
     def test_xmllint(self, mock_check, _mock_run):

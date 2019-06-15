@@ -153,7 +153,9 @@ canned hooks already included geared towards AOSP style guidelines.
 * `google_java_format`: Run Java code through
   [`google-java-format`](https://github.com/google/google-java-format)
 * `jsonlint`: Verify JSON code is sane.
-* `pylint`: Run Python code through `pylint`.
+* `pylint`: Alias of `pylint2`.  Will change to `pylint3` by end of 2019.
+* `pylint2`: Run Python code through `pylint` using Python 2.
+* `pylint3`: Run Python code through `pylint` using Python 3.
 * `xmllint`: Run XML code through `xmllint`.
 * `android_test_mapping_format`: Validate TEST_MAPPING files in Android source
   code. Refer to go/test-mapping for more details.
