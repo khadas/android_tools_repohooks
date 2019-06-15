@@ -35,8 +35,9 @@ persistent=yes
 # usually to register additional checkers.
 load-plugins=
 
-# Use multiple processes to speed up Pylint.
-jobs=1
+# Use multiple processes to speed up Pylint.  A value of 0 autodetects available
+# processors.
+jobs=0
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
