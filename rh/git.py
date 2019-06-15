@@ -92,18 +92,6 @@ def get_patch(commit):
     return rh.utils.run_command(cmd, capture_output=True).output
 
 
-def _try_utf8_decode(data):
-    """Attempts to decode a string as UTF-8.
-
-    Returns:
-      The decoded Unicode object, or the original string if parsing fails.
-    """
-    try:
-        return unicode(data, 'utf-8', 'strict')
-    except UnicodeDecodeError:
-        return data
-
-
 def get_file_content(commit, path):
     """Returns the content of a file at a specific commit.
 
@@ -118,11 +106,22 @@ def get_file_content(commit, path):
     return rh.utils.run_command(cmd, capture_output=True).output
 
 
-# RawDiffEntry represents a line of raw formatted git diff output.
-RawDiffEntry = rh.utils.collection(
-    'RawDiffEntry',
-    src_mode=0, dst_mode=0, src_sha=None, dst_sha=None,
-    status=None, score=None, src_file=None, dst_file=None, file=None)
+class RawDiffEntry(object):
+    """Representation of a line from raw formatted git diff output."""
+
+    # pylint: disable=redefined-builtin
+    def __init__(self, src_mode=0, dst_mode=0, src_sha=None, dst_sha=None,
+                 status=None, score=None, src_file=None, dst_file=None,
+                 file=None):
+        self.src_mode = src_mode
+        self.dst_mode = dst_mode
+        self.src_sha = src_sha
+        self.dst_sha = dst_sha
+        self.status = status
+        self.score = score
+        self.src_file = src_file
+        self.dst_file = dst_file
+        self.file = file
 
 
 # This regular expression pulls apart a line of raw formatted git diff output.
