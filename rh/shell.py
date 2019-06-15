@@ -25,6 +25,9 @@ if sys.path[0] != _path:
     sys.path.insert(0, _path)
 del _path
 
+# pylint: disable=wrong-import-position
+from rh.sixish import string_types
+
 
 # For use by ShellQuote.  Match all characters that the shell might treat
 # specially.  This means a number of things:
@@ -68,7 +71,8 @@ def shell_quote(s):
     Returns:
       A safely (possibly quoted) string.
     """
-    s = s.encode('utf-8')
+    if isinstance(s, bytes):
+        s = s.encode('utf-8')
 
     # See if no quoting is needed so we can return the string as-is.
     for c in s:
@@ -76,20 +80,20 @@ def shell_quote(s):
             break
     else:
         if not s:
-            return "''"
+            return u"''"
         else:
             return s
 
     # See if we can use single quotes first.  Output is nicer.
     if "'" not in s:
-        return "'%s'" % s
+        return u"'%s'" % s
 
     # Have to use double quotes.  Escape the few chars that still expand when
     # used inside of double quotes.
     for c in _SHELL_ESCAPE_CHARS:
         if c in s:
             s = s.replace(c, r'\%s' % c)
-    return '"%s"' % s
+    return u'"%s"' % s
 
 
 def shell_unquote(s):
@@ -155,7 +159,7 @@ def boolean_shell_value(sval, default):
     if sval is None:
         return default
 
-    if isinstance(sval, basestring):
+    if isinstance(sval, string_types):
         s = sval.lower()
         if s in ('yes', 'y', '1', 'true'):
             return True
