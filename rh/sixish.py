@@ -40,10 +40,14 @@ except ImportError:
     import ConfigParser as configparser
 
 
+# We allow mock to be disabled as it's not needed by non-unittest code.
 try:
     import unittest.mock as mock
 except ImportError:
-    import mock
+    try:
+        import mock
+    except ImportError:
+        pass
 
 
 if sys.version_info.major < 3:
