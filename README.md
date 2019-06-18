@@ -140,6 +140,7 @@ some_dog = tool --no-cat-in-commit-message ${PREUPLOAD_COMMIT_MESSAGE}
 This section allows for turning on common/builtin hooks.  There are a bunch of
 canned hooks already included geared towards AOSP style guidelines.
 
+* `bpfmt`: Run Blueprint files (.bp) through `bpfmt`.
 * `checkpatch`: Run commits through the Linux kernel's `checkpatch.pl` script.
 * `clang_format`: Run git-clang-format against the commit. The default style is
   `file`.
@@ -197,6 +198,7 @@ executables can be overridden through `[Tool Paths]`.  This is helpful to
 provide consistent behavior for developers across different OS and Linux
 distros/versions.  The following tools are recognized:
 
+* `bpfmt`: used for the `bpfmt` builtin hook.
 * `clang-format`: used for the `clang_format` builtin hook.
 * `cpplint`: used for the `cpplint` builtin hook.
 * `git-clang-format`: used for the `clang_format` builtin hook.
