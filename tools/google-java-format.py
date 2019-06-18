@@ -95,7 +95,7 @@ def main(argv):
                                   input=diff,
                                   capture_output=True,
                                   extra_env=extra_env).output
-    if stdout != '':
+    if stdout:
         print('One or more files in your commit have Java formatting errors.')
         print('You can run `%s --fix %s` to fix this' %
               (sys.argv[0], rh.shell.cmd_to_str(argv)))
