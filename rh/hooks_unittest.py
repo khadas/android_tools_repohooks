@@ -291,6 +291,20 @@ class BuiltinHooksTests(unittest.TestCase):
             self.assertIn('test_%s' % (hook,), dir(self),
                           msg='Missing unittest for builtin hook %s' % (hook,))
 
+    def test_bpfmt(self, mock_check, _mock_run):
+        """Verify the bpfmt builtin hook."""
+        # First call should do nothing as there are no files to check.
+        ret = rh.hooks.check_bpfmt(
+            self.project, 'commit', 'desc', (), options=self.options)
+        self.assertIsNone(ret)
+        self.assertFalse(mock_check.called)
+
+        # Second call will have some results.
+        diff = [rh.git.RawDiffEntry(file='Android.bp')]
+        ret = rh.hooks.check_bpfmt(
+            self.project, 'commit', 'desc', diff, options=self.options)
+        self.assertIsNotNone(ret)
+
     def test_checkpatch(self, mock_check, _mock_run):
         """Verify the checkpatch builtin hook."""
         ret = rh.hooks.check_checkpatch(
