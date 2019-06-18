@@ -92,7 +92,7 @@ class RunCommandError(Exception):
             'ascii', 'xmlcharrefreplace')
 
     def __eq__(self, other):
-        return (type(self) == type(other) and
+        return (isinstance(other, type(self)) and
                 self.args == other.args)
 
     def __ne__(self, other):
@@ -222,6 +222,7 @@ class _Popen(subprocess.Popen):
     process has knowingly been waitpid'd already.
     """
 
+    # pylint: disable=arguments-differ
     def send_signal(self, signum):
         if self.returncode is not None:
             # The original implementation in Popen allows signaling whatever

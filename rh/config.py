@@ -52,6 +52,9 @@ class RawConfigParser(configparser.RawConfigParser):
                             (name, cnt_min, cnt_max, cnt,))
         return cnt
 
+    # pylint can't seem to grok our use of *args here.
+    # pylint: disable=arguments-differ
+
     def options(self, section, *args):
         """Return the options in |section| (with default |args|).
 
