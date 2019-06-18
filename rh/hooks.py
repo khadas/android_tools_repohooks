@@ -84,8 +84,7 @@ class Placeholders(object):
                     val = self.get(m.group(1))
                     if isinstance(val, str):
                         return val
-                    else:
-                        return ' '.join(val)
+                    return ' '.join(val)
                 ret.append(re.sub(r'\$\{(%s)\}' % ('|'.join(all_vars),),
                                   replace, arg))
 
@@ -246,9 +245,9 @@ def _get_build_os_name():
     system = platform.system()
     if 'Darwin' in system or 'Macintosh' in system:
         return 'darwin-x86'
-    else:
-        # TODO: Add more values if needed.
-        return 'linux-x86'
+
+    # TODO: Add more values if needed.
+    return 'linux-x86'
 
 
 def _fixup_func_caller(cmd, **kwargs):
@@ -343,7 +342,7 @@ def check_commit_msg_bug_field(project, commit, desc, _diff, options=None):
         error = ('Commit message is missing a "%s:" line.  It must match the\n'
                  'following case-sensitive regex:\n\n    %s') % (field, regex)
     else:
-        return
+        return None
 
     return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
                                   project, commit, error=error)]
@@ -363,14 +362,14 @@ def check_commit_msg_changeid_field(project, commit, desc, _diff, options=None):
         if check_re.match(line):
             found.append(line)
 
-    if len(found) == 0:
+    if not found:
         error = ('Commit message is missing a "%s:" line.  It must match the\n'
                  'following case-sensitive regex:\n\n    %s') % (field, regex)
     elif len(found) > 1:
         error = ('Commit message has too many "%s:" lines.  There can be only '
                  'one.') % (field,)
     else:
-        return
+        return None
 
     return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
                                   project, commit, error=error)]
@@ -407,7 +406,7 @@ def check_commit_msg_prebuilt_apk_fields(project, commit, desc, diff,
 
     filtered = _filter_diff(diff, [r'\.apk$'])
     if not filtered:
-        return
+        return None
 
     regexes = [
         r'^package: .*$',
@@ -427,7 +426,7 @@ def check_commit_msg_prebuilt_apk_fields(project, commit, desc, diff,
     if missing:
         error = PREBUILT_APK_MSG % '\n    '.join(missing)
     else:
-        return
+        return None
 
     return [rh.results.HookResult('commit msg: "prebuilt apk:" check',
                                   project, commit, error=error)]
@@ -479,7 +478,7 @@ def check_commit_msg_test_field(project, commit, desc, _diff, options=None):
     if not found:
         error = TEST_MSG % (regex)
     else:
-        return
+        return None
 
     return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
                                   project, commit, error=error)]
@@ -491,7 +490,7 @@ def check_cpplint(project, commit, _desc, diff, options=None):
     # but cpplint would just ignore them.
     filtered = _filter_diff(diff, [r'\.(cc|h|cpp|cu|cuh)$'])
     if not filtered:
-        return
+        return None
 
     cpplint = options.tool_path('cpplint')
     cmd = [cpplint] + options.args(('${PREUPLOAD_FILES}',), filtered)
@@ -502,7 +501,7 @@ def check_gofmt(project, commit, _desc, diff, options=None):
     """Checks that Go files are formatted with gofmt."""
     filtered = _filter_diff(diff, [r'\.go$'])
     if not filtered:
-        return
+        return None
 
     gofmt = options.tool_path('gofmt')
     cmd = [gofmt, '-l'] + options.args((), filtered)
@@ -524,7 +523,7 @@ def check_json(project, commit, _desc, diff, options=None):
 
     filtered = _filter_diff(diff, [r'\.json$'])
     if not filtered:
-        return
+        return None
 
     ret = []
     for d in filtered:
@@ -542,7 +541,7 @@ def _check_pylint(project, commit, _desc, diff, extra_args=None, options=None):
     """Run pylint."""
     filtered = _filter_diff(diff, [r'\.py$'])
     if not filtered:
-        return
+        return None
 
     if extra_args is None:
         extra_args = []
@@ -602,7 +601,7 @@ def check_xmllint(project, commit, _desc, diff, options=None):
 
     filtered = _filter_diff(diff, [r'\.(%s)$' % '|'.join(extensions)])
     if not filtered:
-        return
+        return None
 
     # TODO: Figure out how to integrate schema validation.
     # XXX: Should we use python's XML libs instead?
@@ -617,7 +616,7 @@ def check_android_test_mapping(project, commit, _desc, diff, options=None):
         raise ValueError('Android TEST_MAPPING check takes no options')
     filtered = _filter_diff(diff, [r'(^|.*/)TEST_MAPPING$'])
     if not filtered:
-        return
+        return None
 
     testmapping_format = options.tool_path('android-test-mapping-format')
     cmd = [testmapping_format] + options.args(

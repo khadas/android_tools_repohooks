@@ -56,7 +56,7 @@ class HooksDocsTests(unittest.TestCase):
                 if not in_section:
                     # Look for the section like "## [Tool Paths]".
                     if (line.startswith('#') and
-                        line.lstrip('#').strip() == section):
+                            line.lstrip('#').strip() == section):
                         in_section = True
                 else:
                     # Once we hit the next section (higher or lower), break.
