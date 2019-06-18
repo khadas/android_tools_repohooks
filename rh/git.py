@@ -151,11 +151,12 @@ def raw_diff(path, target):
         match = DIFF_RE.match(line)
         if not match:
             raise ValueError('Failed to parse diff output: %s' % line)
-        diff = RawDiffEntry(**match.groupdict())
-        diff.src_mode = int(diff.src_mode)
-        diff.dst_mode = int(diff.dst_mode)
-        diff.file = diff.dst_file if diff.dst_file else diff.src_file
-        entries.append(diff)
+        rawdiff = RawDiffEntry(**match.groupdict())
+        rawdiff.src_mode = int(rawdiff.src_mode)
+        rawdiff.dst_mode = int(rawdiff.dst_mode)
+        rawdiff.file = (rawdiff.dst_file
+                        if rawdiff.dst_file else rawdiff.src_file)
+        entries.append(rawdiff)
 
     return entries
 

@@ -79,10 +79,7 @@ def shell_quote(s):
         if c in _SHELL_QUOTABLE_CHARS:
             break
     else:
-        if not s:
-            return u"''"
-        else:
-            return s
+        return s if s else u"''"
 
     # See if we can use single quotes first.  Output is nicer.
     if "'" not in s:

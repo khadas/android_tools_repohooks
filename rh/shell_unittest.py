@@ -95,7 +95,7 @@ class ShellQuoteTest(DiffTestCase):
 
         # Test that the operations are reversible.
         self._testData(aux, {k: k for k in tests_quote.values()}, False)
-        self._testData(aux, {k: k for k in tests_quote.keys()}, False)
+        self._testData(aux, {k: k for k in tests_quote}, False)
 
 
 class CmdToStrTest(DiffTestCase):
