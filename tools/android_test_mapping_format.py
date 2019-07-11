@@ -28,6 +28,7 @@ from __future__ import print_function
 import argparse
 import json
 import os
+import re
 import sys
 
 IMPORTS = 'imports'
@@ -40,6 +41,9 @@ FILE_PATTERNS = 'file_patterns'
 TEST_MAPPING_URL = (
     'https://source.android.com/compatibility/tests/development/'
     'test-mapping')
+
+# Pattern used to identify line-level '//'-format comment in TEST_MAPPING file.
+_COMMENTS_RE = re.compile(r'^\s*//')
 
 
 if sys.version_info.major < 3:
@@ -55,6 +59,19 @@ class Error(Exception):
 
 class InvalidTestMappingError(Error):
     """Exception to raise when detecting an invalid TEST_MAPPING file."""
+
+
+def filter_comments(test_mapping_file):
+    """Remove '//'-format comments in TEST_MAPPING file to valid format.
+
+    Args:
+        test_mapping_file: Path to a TEST_MAPPING file.
+
+    Returns:
+        Valid json string without comments.
+    """
+    with open(test_mapping_file) as json_file:
+        return ''.join('\n' if _COMMENTS_RE.match(x) else x for x in json_file)
 
 
 def _validate_import(entry, test_mapping_file):
@@ -124,8 +141,7 @@ def _validate_test(test, test_mapping_file):
 def _load_file(test_mapping_file):
     """Load a TEST_MAPPING file as a json file."""
     try:
-        with open(test_mapping_file) as file_obj:
-            return json.load(file_obj)
+        return json.loads(filter_comments(test_mapping_file))
     except ValueError as e:
         # The file is not a valid JSON file.
         print(
