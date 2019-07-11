@@ -149,6 +149,40 @@ BAD_FILE_PATTERNS = """
 }
 """
 
+TEST_MAPPING_WITH_SUPPORTED_COMMENTS = r"""
+// supported comment
+{
+  // supported comment!@#$%^&*()_
+  "presubmit": [
+    {
+      "name": "CtsWindowManagerDeviceTestCases\"foo//baz",
+      "options": [
+        // supported comment!@#$%^&*()_
+        {
+          "include-annotation": "android.platform.test.annotations.Presubmit"
+        }
+      ]
+    }
+  ],
+  "imports": [
+    {
+      "path": "path1//path2//path3"
+    }
+  ]
+}
+"""
+
+TEST_MAPPING_WITH_NON_SUPPORTED_COMMENTS = """
+{ #non-supported comments
+  // supported comments
+  "presubmit": [#non-supported comments
+    {  // non-supported comments
+      "name": "CtsWindowManagerDeviceTestCases",
+    }
+  ]
+}
+"""
+
 
 class AndroidTestMappingFormatTests(unittest.TestCase):
     """Unittest for android_test_mapping_format module."""
@@ -242,6 +276,20 @@ class AndroidTestMappingFormatTests(unittest.TestCase):
         self.assertRaises(
             android_test_mapping_format.InvalidTestMappingError,
             android_test_mapping_format.process_file,
+            self.test_mapping_file)
+
+    def test_valid_test_mapping_file_with_supported_comments(self):
+        """Verify that '//'-format comment can be filtered."""
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(TEST_MAPPING_WITH_SUPPORTED_COMMENTS)
+        android_test_mapping_format.process_file(self.test_mapping_file)
+
+    def test_valid_test_mapping_file_with_non_supported_comments(self):
+        """Verify that non-supported comment can be detected."""
+        with open(self.test_mapping_file, 'w') as f:
+            f.write(TEST_MAPPING_WITH_NON_SUPPORTED_COMMENTS)
+        self.assertRaises(
+            ValueError, android_test_mapping_format.process_file,
             self.test_mapping_file)
 
 
