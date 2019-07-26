@@ -638,8 +638,9 @@ def check_android_test_mapping(project, commit, _desc, diff, options=None):
         return None
 
     testmapping_format = options.tool_path('android-test-mapping-format')
+    testmapping_args = ['--commit', commit]
     cmd = [testmapping_format] + options.args(
-        (project.dir, '${PREUPLOAD_FILES}',), filtered)
+        (project.dir, '${PREUPLOAD_FILES}'), filtered) + testmapping_args
     return _check_cmd('android-test-mapping-format', project, commit, cmd)
 
 
