@@ -31,6 +31,16 @@ import os
 import re
 import sys
 
+_path = os.path.realpath(__file__ + '/../..')
+if sys.path[0] != _path:
+    sys.path.insert(0, _path)
+del _path
+
+# We have to import our local modules after the sys.path tweak.  We can't use
+# relative imports because this is an executable program, not a module.
+# pylint: disable=wrong-import-position
+import rh.git
+
 IMPORTS = 'imports'
 NAME = 'name'
 OPTIONS = 'options'
@@ -61,17 +71,17 @@ class InvalidTestMappingError(Error):
     """Exception to raise when detecting an invalid TEST_MAPPING file."""
 
 
-def filter_comments(test_mapping_file):
+def filter_comments(json_data):
     """Remove '//'-format comments in TEST_MAPPING file to valid format.
 
     Args:
-        test_mapping_file: Path to a TEST_MAPPING file.
+        json_data: TEST_MAPPING file content (as a string).
 
     Returns:
         Valid json string without comments.
     """
-    with open(test_mapping_file) as json_file:
-        return ''.join('\n' if _COMMENTS_RE.match(x) else x for x in json_file)
+    return ''.join('\n' if _COMMENTS_RE.match(x) else x for x in
+                   json_data.splitlines())
 
 
 def _validate_import(entry, test_mapping_file):
@@ -166,6 +176,8 @@ def process_file(test_mapping_file):
 def get_parser():
     """Return a command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--commit', type=str,
+                        help='Specify the commit to validate.')
     parser.add_argument('project_dir')
     parser.add_argument('files', nargs='+')
     return parser
@@ -176,7 +188,12 @@ def main(argv):
     opts = parser.parse_args(argv)
     try:
         for filename in opts.files:
-            process_file(os.path.join(opts.project_dir, filename))
+            if opts.commit:
+                json_data = rh.git.get_file_content(opts.commit, filename)
+            else:
+                with open(os.path.join(opts.project_dir, filename)) as f:
+                    json_data = f.read()
+            process_file(json_data)
     except:
         print('Visit %s for details about the format of TEST_MAPPING '
               'file.' % TEST_MAPPING_URL, file=sys.stderr)
