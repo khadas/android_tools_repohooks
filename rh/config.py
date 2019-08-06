@@ -91,7 +91,7 @@ class RawConfigParser(configparser.RawConfigParser):
             raise
 
 
-class PreSubmitConfig(object):
+class PreUploadConfig(object):
     """Config file used for per-project `repo upload` hooks."""
 
     FILENAME = 'PREUPLOAD.cfg'
