@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Common errors thrown when repo presubmit checks fail."""
+"""Common errors thrown when repo preupload checks fail."""
 
 from __future__ import print_function
 
