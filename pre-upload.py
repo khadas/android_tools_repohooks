@@ -190,7 +190,7 @@ def _get_project_config():
         # Load the config for this git repo.
         '.',
     )
-    return rh.config.PreSubmitConfig(paths=paths, global_paths=global_paths)
+    return rh.config.PreUploadConfig(paths=paths, global_paths=global_paths)
 
 
 def _attempt_fixes(fixup_func_list, commit_list):
