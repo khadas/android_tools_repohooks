@@ -49,12 +49,15 @@ settings on top.
 
 ## PREUPLOAD.cfg
 
-This file are checked in the top of a specific git repository.  Stacking them
+This file is checked in the top of a specific git repository.  Stacking them
 in subdirectories (to try and override parent settings) is not supported.
 
 ## Example
 
 ```
+# Per-project `repo upload` hook settings.
+# https://android.googlesource.com/platform/tools/repohooks
+
 [Options]
 ignore_merged_commits = true
 
@@ -126,13 +129,20 @@ The key can be any name (as long as the syntax is valid), as can the program
 that is executed. The key is used as the name of the hook for reporting purposes,
 so it should be at least somewhat descriptive.
 
+Whitespace in the key name is OK!
+
+The keys must be unique as duplicates will silently clobber earlier values.
+
+You do not need to send stderr to stdout.  The tooling will take care of
+merging them together for you automatically.
+
 ```
 [Hook Scripts]
-my_first_hook = program --gogog ${PREUPLOAD_FILES}
-another_hook = funtimes --i-need "some space" ${PREUPLOAD_FILES}
-some_fish = linter --ate-a-cat ${PREUPLOAD_FILES}
-some_cat = formatter --cat-commit ${PREUPLOAD_COMMIT}
-some_dog = tool --no-cat-in-commit-message ${PREUPLOAD_COMMIT_MESSAGE}
+my first hook = program --gogog ${PREUPLOAD_FILES}
+another hook = funtimes --i-need "some space" ${PREUPLOAD_FILES}
+some fish = linter --ate-a-cat ${PREUPLOAD_FILES}
+some cat = formatter --cat-commit ${PREUPLOAD_COMMIT}
+some dog = tool --no-cat-in-commit-message ${PREUPLOAD_COMMIT_MESSAGE}
 ```
 
 ## [Builtin Hooks]
