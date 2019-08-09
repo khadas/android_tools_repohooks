@@ -87,9 +87,7 @@ class RunCommandError(Exception):
         return '\n'.join(items)
 
     def __str__(self):
-        # __str__ needs to return ascii, thus force a conversion to be safe.
-        return self.stringify().decode('utf-8', 'replace').encode(
-            'ascii', 'xmlcharrefreplace')
+        return self.stringify()
 
     def __eq__(self, other):
         return (isinstance(other, type(self)) and
@@ -131,6 +129,10 @@ def sudo_run_command(cmd, user='root', **kwargs):
       Barring that, see RunCommand's documentation- it can raise the same things
       RunCommand does.
     """
+    # We don't use this anywhere, so it's easier to not bother supporting it.
+    assert not isinstance(cmd, string_types), 'shell commands not supported'
+    assert 'shell' not in kwargs, 'shell=True is not supported'
+
     sudo_cmd = ['sudo']
 
     if user == 'root' and os.geteuid() == 0:
@@ -149,17 +151,7 @@ def sudo_run_command(cmd, user='root', **kwargs):
     # Finally, block people from passing options to sudo.
     sudo_cmd.append('--')
 
-    if isinstance(cmd, string_types):
-        # We need to handle shell ourselves so the order is correct:
-        #  $ sudo [sudo args] -- bash -c '[shell command]'
-        # If we let RunCommand take care of it, we'd end up with:
-        #  $ bash -c 'sudo [sudo args] -- [shell command]'
-        shell = kwargs.pop('shell', False)
-        if not shell:
-            raise Exception('Cannot run a string command without a shell')
-        sudo_cmd.extend(['/bin/bash', '-c', cmd])
-    else:
-        sudo_cmd.extend(cmd)
+    sudo_cmd.extend(cmd)
 
     return run_command(sudo_cmd, **kwargs)
 
@@ -460,6 +452,12 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
             # Ensure the process is dead.
             _kill_child_process(proc, int_timeout, kill_timeout, cmd, None,
                                 None, None)
+
+    # Make sure output is returned as a string rather than bytes.
+    if cmd_result.output is not None:
+        cmd_result.output = cmd_result.output.decode('utf-8', 'replace')
+    if cmd_result.error is not None:
+        cmd_result.error = cmd_result.error.decode('utf-8', 'replace')
 
     return cmd_result
 # pylint: enable=redefined-builtin
