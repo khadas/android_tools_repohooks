@@ -31,9 +31,10 @@ del _path
 # relative imports because this is an executable program, not a module.
 # pylint: disable=wrong-import-position
 import rh
-import rh.hooks
 import rh.config
+import rh.hooks
 from rh.sixish import mock
+from rh.sixish import string_types
 
 
 class HooksDocsTests(unittest.TestCase):
@@ -223,14 +224,14 @@ class UtilsTests(unittest.TestCase):
         # Just verify it returns something and doesn't crash.
         # pylint: disable=protected-access
         ret = rh.hooks._get_build_os_name()
-        self.assertTrue(isinstance(ret, str))
+        self.assertTrue(isinstance(ret, string_types))
         self.assertNotEqual(ret, '')
 
     def testGetHelperPath(self):
         """Check get_helper_path behavior."""
         # Just verify it doesn't crash.  It's a dirt simple func.
         ret = rh.hooks.get_helper_path('booga')
-        self.assertTrue(isinstance(ret, str))
+        self.assertTrue(isinstance(ret, string_types))
         self.assertNotEqual(ret, '')
 
 
