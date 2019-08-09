@@ -55,3 +55,15 @@ if sys.version_info.major < 3:
     string_types = basestring
 else:
     string_types = str
+
+
+def setenv(var, val):
+    """Set |var| in the environment to |val|.
+
+    Python 2 wants ASCII strings, not unicode.
+    Python 3 only wants unicode strings.
+    """
+    try:
+        os.environ[var] = val
+    except UnicodeEncodeError:
+        os.environ[var] = val.encode('utf-8')
