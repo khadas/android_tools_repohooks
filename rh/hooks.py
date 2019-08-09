@@ -29,8 +29,9 @@ if sys.path[0] != _path:
 del _path
 
 # pylint: disable=wrong-import-position
-import rh.results
 import rh.git
+import rh.results
+from rh.sixish import string_types
 import rh.utils
 
 
@@ -72,7 +73,7 @@ class Placeholders(object):
             for key, val in replacements.items():
                 var = '${%s}' % (key,)
                 if arg == var:
-                    if isinstance(val, str):
+                    if isinstance(val, string_types):
                         ret.append(val)
                     else:
                         ret.extend(val)
@@ -82,7 +83,7 @@ class Placeholders(object):
                 # If no exact matches, do an inline replacement.
                 def replace(m):
                     val = self.get(m.group(1))
-                    if isinstance(val, str):
+                    if isinstance(val, string_types):
                         return val
                     return ' '.join(val)
                 ret.append(re.sub(r'\$\{(%s)\}' % ('|'.join(all_vars),),
