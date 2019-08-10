@@ -263,7 +263,7 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
 
     os.environ.update({
         'REPO_LREV': rh.git.get_commit_for_ref(upstream_branch),
-        'REPO_PATH': proj_dir,
+        'REPO_PATH': os.path.relpath(proj_dir, rh.git.find_repo_root()),
         'REPO_PROJECT': project_name,
         'REPO_REMOTE': remote,
         'REPO_RREV': rh.git.get_remote_revision(upstream_branch, remote),
