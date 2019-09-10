@@ -183,6 +183,26 @@ class RunCommandTests(unittest.TestCase):
         self.assertEqual('hi\n', ret.output)
         self.assertIsNone(ret.error)
 
+    def test_stderr_capture(self):
+        """Verify stderr capturing works."""
+        ret = rh.utils.run_command(['sh', '-c', 'echo hi >&2'],
+                                   redirect_stderr=True)
+        self.assertIsNone(ret.output)
+        self.assertEqual('hi\n', ret.error)
+
+    def test_stdout_utf8(self):
+        """Verify reading UTF-8 data works."""
+        ret = rh.utils.run_command(['printf', r'\xc3\x9f'],
+                                   redirect_stdout=True)
+        self.assertEqual(u'ß', ret.output)
+        self.assertIsNone(ret.error)
+
+    def test_stdin_utf8(self):
+        """Verify writing UTF-8 data works."""
+        ret = rh.utils.run_command(['cat'], redirect_stdout=True, input=u'ß')
+        self.assertEqual(u'ß', ret.output)
+        self.assertIsNone(ret.error)
+
 
 if __name__ == '__main__':
     unittest.main()
