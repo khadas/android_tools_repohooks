@@ -251,7 +251,8 @@ class _Popen(subprocess.Popen):
                 raise
 
 
-# pylint: disable=redefined-builtin
+# We use the keyword arg |input| which trips up pylint checks.
+# pylint: disable=redefined-builtin,input-builtin
 def run_command(cmd, error_message=None, redirect_stdout=False,
                 redirect_stderr=False, cwd=None, input=None,
                 shell=False, env=None, extra_env=None, ignore_sigint=False,
@@ -365,6 +366,7 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
     # Otherwise we assume it's a file object that can be read from directly.
     if isinstance(input, string_types):
         stdin = subprocess.PIPE
+        input = input.encode('utf-8')
     elif input is not None:
         stdin = input
         input = None
@@ -460,4 +462,4 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
         cmd_result.error = cmd_result.error.decode('utf-8', 'replace')
 
     return cmd_result
-# pylint: enable=redefined-builtin
+# pylint: enable=redefined-builtin,input-builtin
