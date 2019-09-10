@@ -144,6 +144,7 @@ enable=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 # We leave many of the style warnings to judgement/peer review.
+# useless-object-inheritance: We disable this for Python 2 compatibility.
 disable=
     fixme,
     file-ignored,
@@ -162,6 +163,7 @@ disable=
     too-many-public-methods,
     too-many-return-statements,
     too-many-statements,
+    useless-object-inheritance,
 
 
 [REPORTS]
