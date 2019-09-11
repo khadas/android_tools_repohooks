@@ -106,6 +106,9 @@ class RunCommandErrorTests(unittest.TestCase):
     def test_eq(self):
         """Check object equality."""
         # Note: We explicitly do not use assertEqual here.
+        # We also explicitly compare to ourselves to make sure our __eq__ works.
+        # We also disable bad-option-value because this is a pylint3 warning.
+        # pylint: disable=bad-option-value,comparison-with-itself
         err1 = rh.utils.RunCommandError('msg', self.result)
         self.assertTrue(err1 == err1)
         err2 = rh.utils.RunCommandError('msg', self.result)
@@ -116,6 +119,9 @@ class RunCommandErrorTests(unittest.TestCase):
     def test_ne(self):
         """Check object inequality."""
         # Note: We explicitly do not use assertNotEqual here.
+        # We also explicitly compare to ourselves to make sure our __eq__ works.
+        # We also disable bad-option-value because this is a pylint3 warning.
+        # pylint: disable=bad-option-value,comparison-with-itself
         err1 = rh.utils.RunCommandError('msg', self.result)
         self.assertFalse(err1 != err1)
         err2 = rh.utils.RunCommandError('msg', self.result)
