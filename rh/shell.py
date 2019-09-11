@@ -160,7 +160,7 @@ def boolean_shell_value(sval, default):
         s = sval.lower()
         if s in ('yes', 'y', '1', 'true'):
             return True
-        elif s in ('no', 'n', '0', 'false'):
+        if s in ('no', 'n', '0', 'false'):
             return False
 
     raise ValueError('Could not decode as a boolean value: %r' % (sval,))
