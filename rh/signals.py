@@ -36,7 +36,7 @@ def relay_signal(handler, signum, frame):
     """
     if handler in (None, signal.SIG_IGN):
         return True
-    elif handler == signal.SIG_DFL:
+    if handler == signal.SIG_DFL:
         # This scenario is a fairly painful to handle fully, thus we just
         # state we couldn't handle it and leave it to client code.
         return False
