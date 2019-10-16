@@ -26,12 +26,6 @@ import argparse
 import os
 import sys
 
-try:
-    __file__
-except NameError:
-    # Work around repo until it gets fixed.
-    # https://gerrit-review.googlesource.com/75481
-    __file__ = os.path.join(os.getcwd(), 'pre-upload.py')
 _path = os.path.dirname(os.path.realpath(__file__))
 if sys.path[0] != _path:
     sys.path.insert(0, _path)
