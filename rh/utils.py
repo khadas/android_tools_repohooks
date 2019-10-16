@@ -387,36 +387,30 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
     cmd_result.cmd = cmd
 
     proc = None
-    # Verify that the signals modules is actually usable, and won't segfault
-    # upon invocation of getsignal.  See signals.SignalModuleUsable for the
-    # details and upstream python bug.
-    use_signals = rh.signals.signal_module_usable()
     try:
         proc = _Popen(cmd, cwd=cwd, stdin=stdin, stdout=stdout,
                       stderr=stderr, shell=False, env=env,
                       close_fds=close_fds)
 
-        if use_signals:
-            old_sigint = signal.getsignal(signal.SIGINT)
-            if ignore_sigint:
-                handler = signal.SIG_IGN
-            else:
-                handler = functools.partial(
-                    _kill_child_process, proc, int_timeout, kill_timeout, cmd,
-                    old_sigint)
-            signal.signal(signal.SIGINT, handler)
+        old_sigint = signal.getsignal(signal.SIGINT)
+        if ignore_sigint:
+            handler = signal.SIG_IGN
+        else:
+            handler = functools.partial(
+                _kill_child_process, proc, int_timeout, kill_timeout, cmd,
+                old_sigint)
+        signal.signal(signal.SIGINT, handler)
 
-            old_sigterm = signal.getsignal(signal.SIGTERM)
-            handler = functools.partial(_kill_child_process, proc, int_timeout,
-                                        kill_timeout, cmd, old_sigterm)
-            signal.signal(signal.SIGTERM, handler)
+        old_sigterm = signal.getsignal(signal.SIGTERM)
+        handler = functools.partial(_kill_child_process, proc, int_timeout,
+                                    kill_timeout, cmd, old_sigterm)
+        signal.signal(signal.SIGTERM, handler)
 
         try:
             (cmd_result.output, cmd_result.error) = proc.communicate(input)
         finally:
-            if use_signals:
-                signal.signal(signal.SIGINT, old_sigint)
-                signal.signal(signal.SIGTERM, old_sigterm)
+            signal.signal(signal.SIGINT, old_sigint)
+            signal.signal(signal.SIGTERM, old_sigterm)
 
             if stdout and not log_stdout_to_file and not stdout_to_pipe:
                 # The linter is confused by how stdout is a file & an int.
@@ -452,6 +446,8 @@ def run_command(cmd, error_message=None, redirect_stdout=False,
     finally:
         if proc is not None:
             # Ensure the process is dead.
+            # Some pylint3 versions are confused here.
+            # pylint: disable=too-many-function-args
             _kill_child_process(proc, int_timeout, kill_timeout, cmd, None,
                                 None, None)
 
