@@ -26,6 +26,19 @@ import argparse
 import os
 import sys
 
+
+# Assert some minimum Python versions as we don't test or support any others.
+# We only support Python 2.7, and require 2.7.5+/3.4+ to include signal fix:
+# https://bugs.python.org/issue14173
+if sys.version_info < (2, 7, 5):
+    print('repohooks: error: Python-2.7.5+ is required', file=sys.stderr)
+    sys.exit(1)
+elif sys.version_info.major == 3 and sys.version_info < (3, 4):
+    # We don't actually test <Python-3.6.  Hope for the best!
+    print('repohooks: error: Python-3.4+ is required', file=sys.stderr)
+    sys.exit(1)
+
+
 _path = os.path.dirname(os.path.realpath(__file__))
 if sys.path[0] != _path:
     sys.path.insert(0, _path)
