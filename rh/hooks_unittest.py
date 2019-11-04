@@ -339,6 +339,8 @@ class BuiltinHooksTests(unittest.TestCase):
                 'subj',
                 'subj\n\nBUG=1234\n',
                 'subj\n\nBUG: 1234\n',
+                'subj\n\nBug: N/A\n',
+                'subj\n\nBug:\n',
             ))
 
     def test_commit_msg_changeid_field(self, _mock_check, _mock_run):
