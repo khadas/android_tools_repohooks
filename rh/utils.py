@@ -270,20 +270,16 @@ class _Popen(subprocess.Popen):
 
 # We use the keyword arg |input| which trips up pylint checks.
 # pylint: disable=redefined-builtin,input-builtin
-def run(cmd, error_message=None, redirect_stdout=False,
-        redirect_stderr=False, cwd=None, input=None,
-        shell=False, env=None, extra_env=None, ignore_sigint=False,
-        combine_stdout_stderr=False, log_stdout_to_file=None,
+def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
+        shell=False, env=None, extra_env=None, combine_stdout_stderr=False,
         error_code_ok=False, int_timeout=1, kill_timeout=1,
-        stdout_to_pipe=False, capture_output=False,
-        quiet=False, close_fds=True):
+        capture_output=False, close_fds=True):
     """Runs a command.
 
     Args:
       cmd: cmd to run.  Should be input to subprocess.Popen.  If a string, shell
           must be true.  Otherwise the command must be an array of arguments,
           and shell must be false.
-      error_message: Prints out this message when an error occurs.
       redirect_stdout: Returns the stdout.
       redirect_stderr: Holds stderr output until input is communicated.
       cwd: The working directory to run this cmd.
@@ -294,14 +290,7 @@ def run(cmd, error_message=None, redirect_stdout=False,
       env: If non-None, this is the environment for the new process.
       extra_env: If set, this is added to the environment for the new process.
           This dictionary is not used to clear any entries though.
-      ignore_sigint: If True, we'll ignore signal.SIGINT before calling the
-          child.  This is the desired behavior if we know our child will handle
-          Ctrl-C.  If we don't do this, I think we and the child will both get
-          Ctrl-C at the same time, which means we'll forcefully kill the child.
       combine_stdout_stderr: Combines stdout and stderr streams into stdout.
-      log_stdout_to_file: If set, redirects stdout to file specified by this
-          path.  If |combine_stdout_stderr| is set to True, then stderr will
-          also be logged to the specified file.
       error_code_ok: Does not raise an exception when command returns a non-zero
           exit code.  Instead, returns the CommandResult object containing the
           exit code.
@@ -309,22 +298,17 @@ def run(cmd, error_message=None, redirect_stdout=False,
           the invoked process to clean up before we send a SIGTERM.
       kill_timeout: If we're interrupted, how long (in seconds) should we give
           the invoked process to shutdown from a SIGTERM before we SIGKILL it.
-      stdout_to_pipe: Redirect stdout to pipe.
       capture_output: Set |redirect_stdout| and |redirect_stderr| to True.
-      quiet: Set |stdout_to_pipe| and |combine_stdout_stderr| to True.
       close_fds: Whether to close all fds before running |cmd|.
 
     Returns:
       A CommandResult object.
 
     Raises:
-      RunCommandError: Raises exception on error with optional error_message.
+      RunCommandError: Raises exception on error.
     """
     if capture_output:
         redirect_stdout, redirect_stderr = True, True
-
-    if quiet:
-        stdout_to_pipe, combine_stdout_stderr = True, True
 
     # Set default for variables.
     stdout = None
@@ -360,11 +344,7 @@ def run(cmd, error_message=None, redirect_stdout=False,
     # view of the file.
     # The Popen API accepts either an int or a file handle for stdout/stderr.
     # pylint: disable=redefined-variable-type
-    if log_stdout_to_file:
-        stdout = open(log_stdout_to_file, 'w+')
-    elif stdout_to_pipe:
-        stdout = subprocess.PIPE
-    elif redirect_stdout:
+    if redirect_stdout:
         stdout = _get_tempfile()
 
     if combine_stdout_stderr:
@@ -410,12 +390,8 @@ def run(cmd, error_message=None, redirect_stdout=False,
                       close_fds=close_fds)
 
         old_sigint = signal.getsignal(signal.SIGINT)
-        if ignore_sigint:
-            handler = signal.SIG_IGN
-        else:
-            handler = functools.partial(
-                _kill_child_process, proc, int_timeout, kill_timeout, cmd,
-                old_sigint)
+        handler = functools.partial(_kill_child_process, proc, int_timeout,
+                                    kill_timeout, cmd, old_sigint)
         signal.signal(signal.SIGINT, handler)
 
         old_sigterm = signal.getsignal(signal.SIGTERM)
@@ -429,7 +405,7 @@ def run(cmd, error_message=None, redirect_stdout=False,
             signal.signal(signal.SIGINT, old_sigint)
             signal.signal(signal.SIGTERM, old_sigterm)
 
-            if stdout and not log_stdout_to_file and not stdout_to_pipe:
+            if stdout:
                 # The linter is confused by how stdout is a file & an int.
                 # pylint: disable=maybe-no-member,no-member
                 stdout.seek(0)
@@ -449,8 +425,6 @@ def run(cmd, error_message=None, redirect_stdout=False,
             msg = 'cwd=%s' % cwd
             if extra_env:
                 msg += ', extra env=%s' % extra_env
-            if error_message:
-                msg += '\n%s' % error_message
             raise RunCommandError(msg, cmd_result)
     except OSError as e:
         estr = str(e)
