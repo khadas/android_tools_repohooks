@@ -64,12 +64,12 @@ class HookResult(object):
 
 
 class HookCommandResult(HookResult):
-    """A single hook result based on a CommandResult."""
+    """A single hook result based on a CompletedProcess."""
 
     def __init__(self, hook, project, commit, result, files=(),
                  fixup_func=None):
         HookResult.__init__(self, hook, project, commit,
-                            result.error if result.error else result.output,
+                            result.stderr if result.stderr else result.stdout,
                             files=files, fixup_func=fixup_func)
         self.result = result
 
