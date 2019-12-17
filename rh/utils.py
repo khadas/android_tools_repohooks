@@ -37,6 +37,23 @@ import rh.signals
 from rh.sixish import string_types
 
 
+def timedelta_str(delta):
+    """A less noisy timedelta.__str__.
+
+    The default timedelta stringification contains a lot of leading zeros and
+    uses microsecond resolution.  This makes for noisy output.
+    """
+    total = delta.total_seconds()
+    hours, rem = divmod(total, 3600)
+    mins, secs = divmod(rem, 60)
+    ret = '%i.%03is' % (secs, delta.microseconds // 1000)
+    if mins:
+        ret = '%im%s' % (mins, ret)
+    if hours:
+        ret = '%ih%s' % (hours, ret)
+    return ret
+
+
 class CommandResult(object):
     """An object to store various attributes of a child process."""
 
