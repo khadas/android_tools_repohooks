@@ -23,6 +23,7 @@ when developing.
 from __future__ import print_function
 
 import argparse
+import datetime
 import os
 import sys
 
@@ -81,6 +82,7 @@ class Output(object):
         self.num_hooks = None
         self.hook_index = 0
         self.success = True
+        self.start_time = datetime.datetime.now()
 
     def set_num_hooks(self, num_hooks):
         """Keep track of how many hooks we'll be running.
@@ -146,10 +148,11 @@ class Output(object):
 
     def finish(self):
         """Print summary for all the hooks."""
-        status_line = '[%s] repohooks for %s %s' % (
+        status_line = '[%s] repohooks for %s %s in %s' % (
             self.PASSED if self.success else self.FAILED,
             self.project_name,
-            'passed' if self.success else 'failed')
+            'passed' if self.success else 'failed',
+            rh.utils.timedelta_str(datetime.datetime.now() - self.start_time))
         rh.terminal.print_status_line(status_line, print_newline=True)
 
 
