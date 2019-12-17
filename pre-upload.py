@@ -338,7 +338,7 @@ def _run_project_hooks(project_name, proj_dir=None, commit_list=None):
 
     if proj_dir is None:
         cmd = ['repo', 'forall', project_name, '-c', 'pwd']
-        result = rh.utils.run_command(cmd, capture_output=True)
+        result = rh.utils.run(cmd, capture_output=True)
         proj_dirs = result.output.split()
         if not proj_dirs:
             print('%s cannot be found.' % project_name, file=sys.stderr)
@@ -407,8 +407,8 @@ def _identify_project(path):
       a blank string upon failure.
     """
     cmd = ['repo', 'forall', '.', '-c', 'echo ${REPO_PROJECT}']
-    return rh.utils.run_command(cmd, capture_output=True, redirect_stderr=True,
-                                cwd=path).output.strip()
+    return rh.utils.run(cmd, capture_output=True, redirect_stderr=True,
+                        cwd=path).output.strip()
 
 
 def direct_main(argv):
@@ -440,8 +440,8 @@ def direct_main(argv):
     # project from CWD.
     if opts.dir is None:
         cmd = ['git', 'rev-parse', '--git-dir']
-        git_dir = rh.utils.run_command(cmd, capture_output=True,
-                                       redirect_stderr=True).output.strip()
+        git_dir = rh.utils.run(cmd, capture_output=True,
+                               redirect_stderr=True).output.strip()
         if not git_dir:
             parser.error('The current directory is not part of a git project.')
         opts.dir = os.path.dirname(os.path.abspath(git_dir))

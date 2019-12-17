@@ -83,7 +83,7 @@ def main(argv):
 
     # Fail gracefully if clang-format itself aborts/fails.
     try:
-        result = rh.utils.run_command(cmd, capture_output=True)
+        result = rh.utils.run(cmd, capture_output=True)
     except rh.utils.RunCommandError as e:
         print('clang-format failed:\n%s' % (e,), file=sys.stderr)
         print('\nPlease report this to the clang team.', file=sys.stderr)
@@ -102,8 +102,8 @@ def main(argv):
 
     if diff_filenames:
         if opts.fix:
-            result = rh.utils.run_command(['git', 'apply'], input=stdout,
-                                          error_code_ok=True)
+            result = rh.utils.run(['git', 'apply'], input=stdout,
+                                  error_code_ok=True)
             if result.returncode:
                 print('Error: Unable to automatically fix things.\n'
                       '  Make sure your checkout is clean first.\n'

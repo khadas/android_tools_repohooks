@@ -122,7 +122,7 @@ class TerminateRunCommandError(RunCommandError):
     """
 
 
-def sudo_run_command(cmd, user='root', **kwargs):
+def sudo_run(cmd, user='root', **kwargs):
     """Run a command via sudo.
 
     Client code must use this rather than coming up with their own RunCommand
@@ -153,7 +153,7 @@ def sudo_run_command(cmd, user='root', **kwargs):
     sudo_cmd = ['sudo']
 
     if user == 'root' and os.geteuid() == 0:
-        return run_command(cmd, **kwargs)
+        return run(cmd, **kwargs)
 
     if user != 'root':
         sudo_cmd += ['-u', user]
@@ -170,7 +170,7 @@ def sudo_run_command(cmd, user='root', **kwargs):
 
     sudo_cmd.extend(cmd)
 
-    return run_command(sudo_cmd, **kwargs)
+    return run(sudo_cmd, **kwargs)
 
 
 def _kill_child_process(proc, int_timeout, kill_timeout, cmd, original_handler,
@@ -248,9 +248,9 @@ class _Popen(subprocess.Popen):
                 # Kill returns either 0 (signal delivered), or 1 (signal wasn't
                 # delivered).  This isn't particularly informative, but we still
                 # need that info to decide what to do, thus error_code_ok=True.
-                ret = sudo_run_command(['kill', '-%i' % signum, str(self.pid)],
-                                       redirect_stdout=True,
-                                       redirect_stderr=True, error_code_ok=True)
+                ret = sudo_run(['kill', '-%i' % signum, str(self.pid)],
+                               redirect_stdout=True,
+                               redirect_stderr=True, error_code_ok=True)
                 if ret.returncode == 1:
                     # The kill binary doesn't distinguish between permission
                     # denied and the pid is missing.  Denied can only occur
@@ -270,13 +270,13 @@ class _Popen(subprocess.Popen):
 
 # We use the keyword arg |input| which trips up pylint checks.
 # pylint: disable=redefined-builtin,input-builtin
-def run_command(cmd, error_message=None, redirect_stdout=False,
-                redirect_stderr=False, cwd=None, input=None,
-                shell=False, env=None, extra_env=None, ignore_sigint=False,
-                combine_stdout_stderr=False, log_stdout_to_file=None,
-                error_code_ok=False, int_timeout=1, kill_timeout=1,
-                stdout_to_pipe=False, capture_output=False,
-                quiet=False, close_fds=True):
+def run(cmd, error_message=None, redirect_stdout=False,
+        redirect_stderr=False, cwd=None, input=None,
+        shell=False, env=None, extra_env=None, ignore_sigint=False,
+        combine_stdout_stderr=False, log_stdout_to_file=None,
+        error_code_ok=False, int_timeout=1, kill_timeout=1,
+        stdout_to_pipe=False, capture_output=False,
+        quiet=False, close_fds=True):
     """Runs a command.
 
     Args:

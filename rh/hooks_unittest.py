@@ -213,10 +213,10 @@ class UtilsTests(unittest.TestCase):
     """Verify misc utility functions."""
 
     def testRunCommand(self):
-        """Check _run_command behavior."""
+        """Check _run behavior."""
         # Most testing is done against the utils.RunCommand already.
         # pylint: disable=protected-access
-        ret = rh.hooks._run_command(['true'])
+        ret = rh.hooks._run(['true'])
         self.assertEqual(ret.returncode, 0)
 
     def testBuildOs(self):
@@ -236,7 +236,7 @@ class UtilsTests(unittest.TestCase):
 
 
 
-@mock.patch.object(rh.utils, 'run_command')
+@mock.patch.object(rh.utils, 'run')
 @mock.patch.object(rh.hooks, '_check_cmd', return_value=['check_cmd'])
 class BuiltinHooksTests(unittest.TestCase):
     """Verify the builtin hooks."""
