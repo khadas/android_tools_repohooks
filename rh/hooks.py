@@ -186,13 +186,13 @@ class HookOptions(object):
         return self.expand_vars([tool_path])[0]
 
 
-def _run_command(cmd, **kwargs):
+def _run(cmd, **kwargs):
     """Helper command for checks that tend to gather output."""
     kwargs.setdefault('redirect_stderr', True)
     kwargs.setdefault('combine_stdout_stderr', True)
     kwargs.setdefault('capture_output', True)
     kwargs.setdefault('error_code_ok', True)
-    return rh.utils.run_command(cmd, **kwargs)
+    return rh.utils.run(cmd, **kwargs)
 
 
 def _match_regex_list(subject, expressions):
@@ -259,7 +259,7 @@ def _fixup_func_caller(cmd, **kwargs):
     parameter in HookCommandResult.
     """
     def wrapper():
-        result = _run_command(cmd, **kwargs)
+        result = _run(cmd, **kwargs)
         if result.returncode not in (None, 0):
             return result.output
         return None
@@ -269,7 +269,7 @@ def _fixup_func_caller(cmd, **kwargs):
 def _check_cmd(hook_name, project, commit, cmd, fixup_func=None, **kwargs):
     """Runs |cmd| and returns its result as a HookCommandResult."""
     return [rh.results.HookCommandResult(hook_name, project, commit,
-                                         _run_command(cmd, **kwargs),
+                                         _run(cmd, **kwargs),
                                          fixup_func=fixup_func)]
 
 
@@ -298,7 +298,7 @@ def check_bpfmt(project, commit, _desc, diff, options=None):
     ret = []
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
-        result = _run_command(cmd, input=data)
+        result = _run(cmd, input=data)
         if result.output:
             ret.append(rh.results.HookResult(
                 'bpfmt', project, commit, error=result.output,
@@ -528,7 +528,7 @@ def check_gofmt(project, commit, _desc, diff, options=None):
     ret = []
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
-        result = _run_command(cmd, input=data)
+        result = _run(cmd, input=data)
         if result.output:
             ret.append(rh.results.HookResult(
                 'gofmt', project, commit, error=result.output,
