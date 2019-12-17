@@ -18,6 +18,7 @@
 
 from __future__ import print_function
 
+import datetime
 import os
 import sys
 import unittest
@@ -33,6 +34,35 @@ del _path
 import rh
 import rh.utils
 from rh.sixish import mock
+
+
+class TimeDeltaStrTests(unittest.TestCase):
+    """Verify behavior of timedelta_str object."""
+
+    def test_same(self):
+        """Check timedelta of 0 seconds."""
+        delta = datetime.timedelta(0)
+        self.assertEqual('0.000s', rh.utils.timedelta_str(delta))
+
+    def test_millisecondss(self):
+        """Check timedelta of milliseconds."""
+        delta = datetime.timedelta(seconds=0.123456)
+        self.assertEqual('0.123s', rh.utils.timedelta_str(delta))
+
+    def test_seconds(self):
+        """Check timedelta of seconds."""
+        delta = datetime.timedelta(seconds=12.3)
+        self.assertEqual('12.300s', rh.utils.timedelta_str(delta))
+
+    def test_minutes(self):
+        """Check timedelta of minutes."""
+        delta = datetime.timedelta(seconds=72.3)
+        self.assertEqual('1m12.300s', rh.utils.timedelta_str(delta))
+
+    def test_hours(self):
+        """Check timedelta of hours."""
+        delta = datetime.timedelta(seconds=4000.3)
+        self.assertEqual('1h6m40.300s', rh.utils.timedelta_str(delta))
 
 
 class CommandResultTests(unittest.TestCase):
