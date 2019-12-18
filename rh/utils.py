@@ -247,10 +247,10 @@ class _Popen(subprocess.Popen):
             if e.errno == errno.EPERM:
                 # Kill returns either 0 (signal delivered), or 1 (signal wasn't
                 # delivered).  This isn't particularly informative, but we still
-                # need that info to decide what to do, thus error_code_ok=True.
+                # need that info to decide what to do, thus check=False.
                 ret = sudo_run(['kill', '-%i' % signum, str(self.pid)],
                                redirect_stdout=True,
-                               redirect_stderr=True, error_code_ok=True)
+                               redirect_stderr=True, check=False)
                 if ret.returncode == 1:
                     # The kill binary doesn't distinguish between permission
                     # denied and the pid is missing.  Denied can only occur
@@ -272,8 +272,8 @@ class _Popen(subprocess.Popen):
 # pylint: disable=redefined-builtin,input-builtin
 def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
         shell=False, env=None, extra_env=None, combine_stdout_stderr=False,
-        error_code_ok=False, int_timeout=1, kill_timeout=1,
-        capture_output=False, close_fds=True):
+        check=True, int_timeout=1, kill_timeout=1, capture_output=False,
+        close_fds=True):
     """Runs a command.
 
     Args:
@@ -291,9 +291,9 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
       extra_env: If set, this is added to the environment for the new process.
           This dictionary is not used to clear any entries though.
       combine_stdout_stderr: Combines stdout and stderr streams into stdout.
-      error_code_ok: Does not raise an exception when command returns a non-zero
-          exit code.  Instead, returns the CommandResult object containing the
-          exit code.
+      check: Whether to raise an exception when command returns a non-zero exit
+          code, or return the CommandResult object containing the exit code.
+          Note: will still raise an exception if the cmd file does not exist.
       int_timeout: If we're interrupted, how long (in seconds) should we give
           the invoked process to clean up before we send a SIGTERM.
       kill_timeout: If we're interrupted, how long (in seconds) should we give
@@ -421,7 +421,7 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
 
         cmd_result.returncode = proc.returncode
 
-        if not error_code_ok and proc.returncode:
+        if check and proc.returncode:
             msg = 'cwd=%s' % cwd
             if extra_env:
                 msg += ', extra env=%s' % extra_env
@@ -430,7 +430,7 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
         estr = str(e)
         if e.errno == errno.EACCES:
             estr += '; does the program need `chmod a+x`?'
-        if error_code_ok:
+        if not check:
             cmd_result = CommandResult(cmd=cmd, error=estr, returncode=255)
         else:
             raise RunCommandError(estr, CommandResult(cmd=cmd), exception=e)
