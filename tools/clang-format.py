@@ -102,8 +102,7 @@ def main(argv):
 
     if diff_filenames:
         if opts.fix:
-            result = rh.utils.run(['git', 'apply'], input=stdout,
-                                  error_code_ok=True)
+            result = rh.utils.run(['git', 'apply'], input=stdout, check=False)
             if result.returncode:
                 print('Error: Unable to automatically fix things.\n'
                       '  Make sure your checkout is clean first.\n'

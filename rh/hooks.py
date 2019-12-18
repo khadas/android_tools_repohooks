@@ -191,7 +191,7 @@ def _run(cmd, **kwargs):
     kwargs.setdefault('redirect_stderr', True)
     kwargs.setdefault('combine_stdout_stderr', True)
     kwargs.setdefault('capture_output', True)
-    kwargs.setdefault('error_code_ok', True)
+    kwargs.setdefault('check', False)
     return rh.utils.run(cmd, **kwargs)
 
 
