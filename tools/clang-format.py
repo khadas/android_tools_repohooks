@@ -84,12 +84,12 @@ def main(argv):
     # Fail gracefully if clang-format itself aborts/fails.
     try:
         result = rh.utils.run(cmd, capture_output=True)
-    except rh.utils.RunCommandError as e:
+    except rh.utils.CalledProcessError as e:
         print('clang-format failed:\n%s' % (e,), file=sys.stderr)
         print('\nPlease report this to the clang team.', file=sys.stderr)
         return 1
 
-    stdout = result.output
+    stdout = result.stdout
     if stdout.rstrip('\n') == 'no modified files to format':
         # This is always printed when only files that clang-format does not
         # understand were modified.
