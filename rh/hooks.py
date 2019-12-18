@@ -261,7 +261,7 @@ def _fixup_func_caller(cmd, **kwargs):
     def wrapper():
         result = _run(cmd, **kwargs)
         if result.returncode not in (None, 0):
-            return result.output
+            return result.stdout
         return None
     return wrapper
 
@@ -299,9 +299,9 @@ def check_bpfmt(project, commit, _desc, diff, options=None):
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
         result = _run(cmd, input=data)
-        if result.output:
+        if result.stdout:
             ret.append(rh.results.HookResult(
-                'bpfmt', project, commit, error=result.output,
+                'bpfmt', project, commit, error=result.stdout,
                 files=(d.file,)))
     return ret
 
@@ -529,9 +529,9 @@ def check_gofmt(project, commit, _desc, diff, options=None):
     for d in filtered:
         data = rh.git.get_file_content(commit, d.file)
         result = _run(cmd, input=data)
-        if result.output:
+        if result.stdout:
             ret.append(rh.results.HookResult(
-                'gofmt', project, commit, error=result.output,
+                'gofmt', project, commit, error=result.stdout,
                 files=(d.file,)))
     return ret
 

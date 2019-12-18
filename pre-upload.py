@@ -266,7 +266,7 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
     try:
         remote = rh.git.get_upstream_remote()
         upstream_branch = rh.git.get_upstream_branch()
-    except rh.utils.RunCommandError as e:
+    except rh.utils.CalledProcessError as e:
         output.error('Upstream remote/tracking branch lookup',
                      '%s\nDid you run repo start?  Is your HEAD detached?' %
                      (e,))
@@ -339,7 +339,7 @@ def _run_project_hooks(project_name, proj_dir=None, commit_list=None):
     if proj_dir is None:
         cmd = ['repo', 'forall', project_name, '-c', 'pwd']
         result = rh.utils.run(cmd, capture_output=True)
-        proj_dirs = result.output.split()
+        proj_dirs = result.stdout.split()
         if not proj_dirs:
             print('%s cannot be found.' % project_name, file=sys.stderr)
             print('Please specify a valid project.', file=sys.stderr)
@@ -408,7 +408,7 @@ def _identify_project(path):
     """
     cmd = ['repo', 'forall', '.', '-c', 'echo ${REPO_PROJECT}']
     return rh.utils.run(cmd, capture_output=True, redirect_stderr=True,
-                        cwd=path).output.strip()
+                        cwd=path).stdout.strip()
 
 
 def direct_main(argv):
@@ -441,7 +441,7 @@ def direct_main(argv):
     if opts.dir is None:
         cmd = ['git', 'rev-parse', '--git-dir']
         git_dir = rh.utils.run(cmd, capture_output=True,
-                               redirect_stderr=True).output.strip()
+                               redirect_stderr=True).stdout.strip()
         if not git_dir:
             parser.error('The current directory is not part of a git project.')
         opts.dir = os.path.dirname(os.path.abspath(git_dir))
