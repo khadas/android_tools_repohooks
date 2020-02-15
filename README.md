@@ -1,12 +1,12 @@
 # AOSP Preupload Hooks
 
-[TOC]
-
 This repo holds hooks that get run by repo during the upload phase.  They
 perform various checks automatically such as running linters on your code.
 
 Note: Currently all hooks are disabled by default.  Each repo must explicitly
 turn on any hook it wishes to enforce.
+
+[TOC]
 
 ## Usage
 
@@ -240,13 +240,13 @@ These are notes for people updating the `pre-upload.py` hook itself:
 * New hooks can be added in `rh/hooks.py`.  Be sure to keep the list up-to-date
   with the documentation in this file.
 
-### Warnings
+## Warnings
 
 If the return code of a hook is 77, then it is assumed to be a warning.  The
 output will be printed to the terminal, but uploading will still be allowed
 without a bypass being required.
 
-## TODO/Limitations
+# TODO/Limitations
 
 * `pylint` should support per-directory pylintrc files.
 * Some checkers operate on the files as they exist in the filesystem.  This is
