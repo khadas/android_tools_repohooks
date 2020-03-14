@@ -69,26 +69,39 @@ class Placeholders(object):
 
         ret = []
         for arg in args:
-            # First scan for exact matches
-            for key, val in replacements.items():
-                var = '${%s}' % (key,)
-                if arg == var:
-                    if isinstance(val, string_types):
-                        ret.append(val)
-                    else:
-                        ret.extend(val)
-                    # We break on first hit to avoid double expansion.
-                    break
+            if arg.endswith('${PREUPLOAD_FILES_PREFIXED}'):
+                if arg == '${PREUPLOAD_FILES_PREFIXED}':
+                    assert len(ret) > 1, ('PREUPLOAD_FILES_PREFIXED cannot be '
+                                          'the 1st or 2nd argument')
+                    prev_arg = ret[-1]
+                    ret = ret[0:-1]
+                    for file in self.get('PREUPLOAD_FILES'):
+                        ret.append(prev_arg)
+                        ret.append(file)
+                else:
+                    prefix = arg[0:-len('${PREUPLOAD_FILES_PREFIXED}')]
+                    ret.extend(
+                        prefix + file for file in self.get('PREUPLOAD_FILES'))
             else:
-                # If no exact matches, do an inline replacement.
-                def replace(m):
-                    val = self.get(m.group(1))
-                    if isinstance(val, string_types):
-                        return val
-                    return ' '.join(val)
-                ret.append(re.sub(r'\$\{(%s)\}' % ('|'.join(all_vars),),
-                                  replace, arg))
-
+                # First scan for exact matches
+                for key, val in replacements.items():
+                    var = '${%s}' % (key,)
+                    if arg == var:
+                        if isinstance(val, string_types):
+                            ret.append(val)
+                        else:
+                            ret.extend(val)
+                        # We break on first hit to avoid double expansion.
+                        break
+                else:
+                    # If no exact matches, do an inline replacement.
+                    def replace(m):
+                        val = self.get(m.group(1))
+                        if isinstance(val, string_types):
+                            return val
+                        return ' '.join(val)
+                    ret.append(re.sub(r'\$\{(%s)\}' % ('|'.join(all_vars),),
+                                      replace, arg))
         return ret
 
     @classmethod

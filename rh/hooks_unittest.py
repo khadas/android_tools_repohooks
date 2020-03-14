@@ -97,7 +97,9 @@ class PlaceholderTests(unittest.TestCase):
             'PREUPLOAD_COMMIT_MESSAGE': 'commit message',
             'PREUPLOAD_COMMIT': '5c4c293174bb61f0f39035a71acd9084abfa743d',
         })
-        self.replacer = rh.hooks.Placeholders()
+        self.replacer = rh.hooks.Placeholders(
+            [rh.git.RawDiffEntry(file=x)
+             for x in ['path1/file1', 'path2/file2']])
 
     def tearDown(self):
         os.environ.clear()
@@ -117,9 +119,13 @@ class PlaceholderTests(unittest.TestCase):
             # We also make sure that things in ${REPO_ROOT} are not double
             # expanded (which is why the return includes ${BUILD_OS}).
             '${REPO_ROOT}/some/prog/REPO_ROOT/ok',
-            # Verify lists are merged rather than inserted.  In this case, the
-            # list is empty, but we'd hit an error still if we saw [] in args.
+            # Verify lists are merged rather than inserted.
             '${PREUPLOAD_FILES}',
+            # Verify each file is preceded with '--file=' prefix.
+            '--file=${PREUPLOAD_FILES_PREFIXED}',
+            # Verify each file is preceded with '--file' argument.
+            '--file',
+            '${PREUPLOAD_FILES_PREFIXED}',
             # Verify values with whitespace don't expand into multiple args.
             '${PREUPLOAD_COMMIT_MESSAGE}',
             # Verify multiple values get replaced.
@@ -130,6 +136,14 @@ class PlaceholderTests(unittest.TestCase):
         output_args = self.replacer.expand_vars(input_args)
         exp_args = [
             '/ ${BUILD_OS}/some/prog/REPO_ROOT/ok',
+            'path1/file1',
+            'path2/file2',
+            '--file=path1/file1',
+            '--file=path2/file2',
+            '--file',
+            'path1/file1',
+            '--file',
+            'path2/file2',
             'commit message',
             '5c4c293174bb61f0f39035a71acd9084abfa743d^commit message',
             '${THIS_VAR_IS_GOOD}',
@@ -154,7 +168,8 @@ class PlaceholderTests(unittest.TestCase):
 
     def testPREUPLOAD_FILES(self):
         """Verify handling of PREUPLOAD_FILES."""
-        self.assertEqual(self.replacer.get('PREUPLOAD_FILES'), [])
+        self.assertEqual(self.replacer.get('PREUPLOAD_FILES'),
+                         ['path1/file1', 'path2/file2'])
 
     @mock.patch.object(rh.git, 'find_repo_root', return_value='/repo!')
     def testREPO_ROOT(self, m):
