@@ -173,6 +173,11 @@ def _process_hook_results(results):
     if not results:
         return (None, None)
 
+    # We track these as dedicated fields in case a hook doesn't output anything.
+    # We want to treat silent non-zero exits as failures too.
+    has_error = False
+    has_warning = False
+
     error_ret = ''
     warning_ret = ''
     for result in results:
@@ -183,11 +188,14 @@ def _process_hook_results(results):
             lines = result.error.splitlines()
             ret += '\n'.join('    %s' % (x,) for x in lines)
             if result.is_warning():
+                has_warning = True
                 warning_ret += ret
             else:
+                has_error = True
                 error_ret += ret
 
-    return (error_ret or None, warning_ret or None)
+    return (error_ret if has_error else None,
+            warning_ret if has_warning else None)
 
 
 def _get_project_config():
@@ -307,10 +315,10 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
             output.hook_start(name)
             hook_results = hook(project, commit, desc, diff)
             (error, warning) = _process_hook_results(hook_results)
-            if error or warning:
-                if warning:
+            if error is not None or warning is not None:
+                if warning is not None:
                     output.hook_warning(name, warning)
-                if error:
+                if error is not None:
                     ret = False
                     output.hook_error(name, error)
                 for result in hook_results:
