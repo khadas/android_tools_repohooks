@@ -181,6 +181,9 @@ canned hooks already included geared towards AOSP style guidelines.
 * `commit_msg_relnote_field_format`: Check for possible misspellings of the
   `Relnote:` field and that multiline release notes are properly formatted with
   quotes.
+* `commit_msg_relnote_for_current_txt`: Check that CLs with changes to
+  current.txt or public_plus_experimental_current.txt also contain a
+  `Relnote:` field in the commit message.
 * `commit_msg_test_field`: Require a `Test:` line.
 * `cpplint`: Run through the cpplint tool (for C++ code).
 * `gofmt`: Run Go code through `gofmt`.
