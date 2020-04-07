@@ -103,6 +103,10 @@ such will be expanded correctly via argument positions, so do not try to
 force your own quote handling.
 
 * `${PREUPLOAD_FILES}`: List of files to operate on.
+* `${PREUPLOAD_FILES_PREFIXED}`: A list of files to operate on.
+   Any string preceding/attached to the keyword ${PREUPLOAD_FILES_PREFIXED}
+   will be repeated for each file automatically. If no string is preceding/attached
+   to the keyword, the previous argument will be repeated before each file.
 * `${PREUPLOAD_COMMIT}`: Commit hash.
 * `${PREUPLOAD_COMMIT_MESSAGE}`: Commit message.
 
@@ -112,6 +116,22 @@ are automatically expanded for you:
 * `${REPO_ROOT}`: The absolute path of the root of the repo checkout.
 * `${BUILD_OS}`: The string `darwin-x86` for macOS and the string `linux-x86`
   for Linux/x86.
+
+### Examples
+
+Here are some examples of using the placeholders.
+Consider this sample config file.
+```
+[Hook Scripts]
+lister = ls ${PREUPLOAD_FILES}
+checker prefix = check --file=${PREUPLOAD_FILES_PREFIXED}
+checker flag = check --file ${PREUPLOAD_FILES_PREFIXED}
+```
+With a commit that changes `path1/file1` and `path2/file2`, then this will run
+programs with the arguments:
+* ['ls', 'path1/file1', 'path2/file2']
+* ['check', '--file=path1/file1', '--file=path2/file2']
+* ['check', '--file', 'path1/file1', '--file', 'path2/file2']
 
 ## [Options]
 
