@@ -282,8 +282,7 @@ class _Popen(subprocess.Popen):
                 # delivered).  This isn't particularly informative, but we still
                 # need that info to decide what to do, thus check=False.
                 ret = sudo_run(['kill', '-%i' % signum, str(self.pid)],
-                               redirect_stdout=True,
-                               redirect_stderr=True, check=False)
+                               capture_output=True, check=False)
                 if ret.returncode == 1:
                     # The kill binary doesn't distinguish between permission
                     # denied and the pid is missing.  Denied can only occur

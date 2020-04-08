@@ -201,7 +201,6 @@ class HookOptions(object):
 
 def _run(cmd, **kwargs):
     """Helper command for checks that tend to gather output."""
-    kwargs.setdefault('redirect_stderr', True)
     kwargs.setdefault('combine_stdout_stderr', True)
     kwargs.setdefault('capture_output', True)
     kwargs.setdefault('check', False)
