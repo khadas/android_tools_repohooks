@@ -730,6 +730,17 @@ def check_pylint3(project, commit, desc, diff, options=None):
                          options=options)
 
 
+def check_rustfmt(project, commit, desc, diff, options=None):
+    """Run "rustfmt --check" on diffed rust files"""
+    filtered = _filter_diff(diff, [r'\.rs$'])
+    if not filtered:
+        return None
+
+    rustfmt = options.tool_path('rustfmt')
+    cmd = [rustfmt] + options.args(('--check', '${PREUPLOAD_FILES}',), filtered)
+    return _check_cmd('rustfmt', project, commit, cmd)
+
+
 def check_xmllint(project, commit, _desc, diff, options=None):
     """Run xmllint."""
     # XXX: Should we drop most of these and probe for <?xml> tags?
@@ -808,6 +819,7 @@ BUILTIN_HOOKS = {
     'pylint': check_pylint2,
     'pylint2': check_pylint2,
     'pylint3': check_pylint3,
+    'rustfmt': check_rustfmt,
     'xmllint': check_xmllint,
 }
 
@@ -824,4 +836,5 @@ TOOL_PATHS = {
     'google-java-format': 'google-java-format',
     'google-java-format-diff': 'google-java-format-diff.py',
     'pylint': 'pylint',
+    'rustfmt': 'rustfmt',
 }
