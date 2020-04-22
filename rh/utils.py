@@ -152,57 +152,6 @@ class TerminateCalledProcessError(CalledProcessError):
     """
 
 
-def sudo_run(cmd, user='root', **kwargs):
-    """Run a command via sudo.
-
-    Client code must use this rather than coming up with their own RunCommand
-    invocation that jams sudo in- this function is used to enforce certain
-    rules in our code about sudo usage, and as a potential auditing point.
-
-    Args:
-      cmd: The command to run.  See RunCommand for rules of this argument-
-          SudoRunCommand purely prefixes it with sudo.
-      user: The user to run the command as.
-      kwargs: See RunCommand options, it's a direct pass thru to it.
-          Note that this supports a 'strict' keyword that defaults to True.
-          If set to False, it'll suppress strict sudo behavior.
-
-    Returns:
-      See RunCommand documentation.
-
-    Raises:
-      This function may immediately raise CalledProcessError if we're operating
-      in a strict sudo context and the API is being misused.
-      Barring that, see RunCommand's documentation- it can raise the same things
-      RunCommand does.
-    """
-    # We don't use this anywhere, so it's easier to not bother supporting it.
-    assert not isinstance(cmd, string_types), 'shell commands not supported'
-    assert 'shell' not in kwargs, 'shell=True is not supported'
-
-    sudo_cmd = ['sudo']
-
-    if user == 'root' and os.geteuid() == 0:
-        return run(cmd, **kwargs)
-
-    if user != 'root':
-        sudo_cmd += ['-u', user]
-
-    # Pass these values down into the sudo environment, since sudo will
-    # just strip them normally.
-    extra_env = kwargs.pop('extra_env', None)
-    extra_env = {} if extra_env is None else extra_env.copy()
-
-    sudo_cmd.extend('%s=%s' % (k, v) for k, v in extra_env.items())
-
-    # Finally, block people from passing options to sudo.
-    sudo_cmd.append('--')
-
-    sudo_cmd.extend(cmd)
-
-    return run(sudo_cmd, **kwargs)
-
-
 def _kill_child_process(proc, int_timeout, kill_timeout, cmd, original_handler,
                         signum, frame):
     """Used as a signal handler by RunCommand.
@@ -277,20 +226,7 @@ class _Popen(subprocess.Popen):
         try:
             os.kill(self.pid, signum)
         except EnvironmentError as e:
-            if e.errno == errno.EPERM:
-                # Kill returns either 0 (signal delivered), or 1 (signal wasn't
-                # delivered).  This isn't particularly informative, but we still
-                # need that info to decide what to do, thus check=False.
-                ret = sudo_run(['kill', '-%i' % signum, str(self.pid)],
-                               capture_output=True, check=False)
-                if ret.returncode == 1:
-                    # The kill binary doesn't distinguish between permission
-                    # denied and the pid is missing.  Denied can only occur
-                    # under weird grsec/selinux policies.  We ignore that
-                    # potential and just assume the pid was already dead and
-                    # try to reap it.
-                    self.poll()
-            elif e.errno == errno.ESRCH:
+            if e.errno == errno.ESRCH:
                 # Since we know the process is dead, reap it now.
                 # Normally Popen would throw this error- we suppress it since
                 # frankly that's a misfeature and we're already overriding

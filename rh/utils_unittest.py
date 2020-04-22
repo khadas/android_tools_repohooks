@@ -33,7 +33,6 @@ del _path
 # pylint: disable=wrong-import-position
 import rh
 import rh.utils
-from rh.sixish import mock
 
 
 class TimeDeltaStrTests(unittest.TestCase):
@@ -129,49 +128,6 @@ class CalledProcessErrorTests(unittest.TestCase):
         err = rh.utils.CalledProcessError(
             0, ['mycmd'], exception=Exception('bad'))
         self.assertNotEqual('', repr(err))
-
-
-# We shouldn't require sudo to run unittests :).
-@mock.patch.object(rh.utils, 'run')
-@mock.patch.object(os, 'geteuid', return_value=1000)
-class SudoRunCommandTests(unittest.TestCase):
-    """Verify behavior of sudo_run helper."""
-
-    def test_run_as_root_as_root(self, mock_geteuid, mock_run):
-        """Check behavior when we're already root."""
-        mock_geteuid.return_value = 0
-        ret = rh.utils.sudo_run(['ls'], user='root')
-        self.assertIsNotNone(ret)
-        args, _kwargs = mock_run.call_args
-        self.assertEqual((['ls'],), args)
-
-    def test_run_as_root_as_nonroot(self, _mock_geteuid, mock_run):
-        """Check behavior when we're not already root."""
-        ret = rh.utils.sudo_run(['ls'], user='root')
-        self.assertIsNotNone(ret)
-        args, _kwargs = mock_run.call_args
-        self.assertEqual((['sudo', '--', 'ls'],), args)
-
-    def test_run_as_nonroot_as_nonroot(self, _mock_geteuid, mock_run):
-        """Check behavior when we're not already root."""
-        ret = rh.utils.sudo_run(['ls'], user='nobody')
-        self.assertIsNotNone(ret)
-        args, _kwargs = mock_run.call_args
-        self.assertEqual((['sudo', '-u', 'nobody', '--', 'ls'],), args)
-
-    def test_env(self, _mock_geteuid, mock_run):
-        """Check passing through env vars."""
-        ret = rh.utils.sudo_run(['ls'], extra_env={'FOO': 'bar'})
-        self.assertIsNotNone(ret)
-        args, _kwargs = mock_run.call_args
-        self.assertEqual((['sudo', 'FOO=bar', '--', 'ls'],), args)
-
-    def test_shell(self, _mock_geteuid, _mock_run):
-        """Check attempts to use shell code are rejected."""
-        with self.assertRaises(AssertionError):
-            rh.utils.sudo_run('foo')
-        with self.assertRaises(AssertionError):
-            rh.utils.sudo_run(['ls'], shell=True)
 
 
 class RunCommandTests(unittest.TestCase):
