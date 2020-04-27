@@ -617,6 +617,10 @@ class BuiltinHooksTests(unittest.TestCase):
         self._test_file_filter(mock_check, rh.hooks.check_pylint3,
                                ('foo.py',))
 
+    def test_rustfmt(self, mock_check, _mock_run):
+        self._test_file_filter(mock_check, rh.hooks.check_rustfmt,
+                               ('foo.rs',))
+
     def test_xmllint(self, mock_check, _mock_run):
         """Verify the xmllint builtin hook."""
         self._test_file_filter(mock_check, rh.hooks.check_xmllint,
