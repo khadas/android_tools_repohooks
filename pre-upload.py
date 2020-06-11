@@ -419,8 +419,7 @@ def _identify_project(path):
       a blank string upon failure.
     """
     cmd = ['repo', 'forall', '.', '-c', 'echo ${REPO_PROJECT}']
-    return rh.utils.run(cmd, capture_output=True, redirect_stderr=True,
-                        cwd=path).stdout.strip()
+    return rh.utils.run(cmd, capture_output=True, cwd=path).stdout.strip()
 
 
 def direct_main(argv):
@@ -452,8 +451,7 @@ def direct_main(argv):
     # project from CWD.
     if opts.dir is None:
         cmd = ['git', 'rev-parse', '--git-dir']
-        git_dir = rh.utils.run(cmd, capture_output=True,
-                               redirect_stderr=True).stdout.strip()
+        git_dir = rh.utils.run(cmd, capture_output=True).stdout.strip()
         if not git_dir:
             parser.error('The current directory is not part of a git project.')
         opts.dir = os.path.dirname(os.path.abspath(git_dir))
