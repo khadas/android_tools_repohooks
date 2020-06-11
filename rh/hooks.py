@@ -192,6 +192,9 @@ def _run(cmd, **kwargs):
     kwargs.setdefault('combine_stdout_stderr', True)
     kwargs.setdefault('capture_output', True)
     kwargs.setdefault('check', False)
+    # Make sure hooks run with stdin disconnected to avoid accidentally
+    # interactive tools causing pauses.
+    kwargs.setdefault('input', '')
     return rh.utils.run(cmd, **kwargs)
 
 
