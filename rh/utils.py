@@ -368,8 +368,8 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
         redirect_stdout, redirect_stderr = True, True
 
     # Set default for variables.
-    stdout = None
-    stderr = None
+    popen_stdout = None
+    popen_stderr = None
     stdin = None
     result = CompletedProcess()
 
@@ -402,17 +402,17 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
     # The Popen API accepts either an int or a file handle for stdout/stderr.
     # pylint: disable=redefined-variable-type
     if redirect_stdout:
-        stdout = _get_tempfile()
+        popen_stdout = _get_tempfile()
 
     if combine_stdout_stderr:
-        stderr = subprocess.STDOUT
+        popen_stderr = subprocess.STDOUT
     elif redirect_stderr:
-        stderr = _get_tempfile()
+        popen_stderr = _get_tempfile()
     # pylint: enable=redefined-variable-type
 
     # If subprocesses have direct access to stdout or stderr, they can bypass
     # our buffers, so we need to flush to ensure that output is not interleaved.
-    if stdout is None or stderr is None:
+    if popen_stdout is None or popen_stderr is None:
         sys.stdout.flush()
         sys.stderr.flush()
 
@@ -442,8 +442,8 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
 
     proc = None
     try:
-        proc = _Popen(cmd, cwd=cwd, stdin=stdin, stdout=stdout,
-                      stderr=stderr, shell=False, env=env,
+        proc = _Popen(cmd, cwd=cwd, stdin=stdin, stdout=popen_stdout,
+                      stderr=popen_stderr, shell=False, env=env,
                       close_fds=close_fds)
 
         old_sigint = signal.getsignal(signal.SIGINT)
@@ -462,19 +462,19 @@ def run(cmd, redirect_stdout=False, redirect_stderr=False, cwd=None, input=None,
             signal.signal(signal.SIGINT, old_sigint)
             signal.signal(signal.SIGTERM, old_sigterm)
 
-            if stdout:
+            if popen_stdout:
                 # The linter is confused by how stdout is a file & an int.
                 # pylint: disable=maybe-no-member,no-member
-                stdout.seek(0)
-                result.stdout = stdout.read()
-                stdout.close()
+                popen_stdout.seek(0)
+                result.stdout = popen_stdout.read()
+                popen_stdout.close()
 
-            if stderr and stderr != subprocess.STDOUT:
+            if popen_stderr and popen_stderr != subprocess.STDOUT:
                 # The linter is confused by how stderr is a file & an int.
                 # pylint: disable=maybe-no-member,no-member
-                stderr.seek(0)
-                result.stderr = stderr.read()
-                stderr.close()
+                popen_stderr.seek(0)
+                result.stderr = popen_stderr.read()
+                popen_stderr.close()
 
         result.returncode = proc.returncode
 
