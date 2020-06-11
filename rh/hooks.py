@@ -504,6 +504,135 @@ def check_commit_msg_test_field(project, commit, desc, _diff, options=None):
                                   project, commit, error=error)]
 
 
+RELNOTE_MISSPELL_MSG = """Commit message contains something that looks
+similar to the "Relnote:" tag.  It must match the regex:
+
+    %s
+
+The Relnote: stanza is free-form and should describe what developers need to
+know about your change.
+
+Some examples below:
+
+Relnote: "Added a new API `Class#isBetter` to determine whether or not the
+class is better"
+Relnote: Fixed an issue where the UI would hang on a double tap.
+
+Check the git history for more examples. It's a free-form field, so we urge
+you to develop conventions that make sense for your project.
+"""
+
+RELNOTE_MISSING_QUOTES_MSG = """Commit message contains something that looks
+similar to the "Relnote:" tag but might be malformatted.  For multiline
+release notes, you need to include a starting and closing quote.
+
+Multi-line Relnote example:
+
+Relnote: "Added a new API `Class#getSize` to get the size of the class.
+This is useful if you need to know the size of the class."
+
+Single-line Relnote example:
+
+Relnote: Added a new API `Class#containsData`
+"""
+
+def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
+                                          options=None):
+    """Check the commit for one correctly formatted 'Relnote:' line.
+
+    Checks the commit message for two things:
+    (1) Checks for possible misspellings of the 'Relnote:' tag.
+    (2) Ensures that multiline release notes are properly formatted with a
+    starting quote and an endling quote.
+    """
+    field = 'Relnote'
+    regex_relnote = r'^%s:.*$' % (field,)
+    check_re_relnote = re.compile(regex_relnote, re.IGNORECASE)
+
+    if options.args():
+        raise ValueError('commit msg %s check takes no options' % (field,))
+
+    # Check 1: Check for possible misspellings of the `Relnote:` field.
+
+    # Regex for misspelled fields.
+    possible_field_misspells = {'Relnotes', 'ReleaseNote',
+                                'Rel-note', 'Rel note',
+                                'rel-notes', 'releasenotes',
+                                'release-note', 'release-notes'}
+    regex_field_misspells = r'^(%s): .*$' % (
+        '|'.join(possible_field_misspells),
+    )
+    check_re_field_misspells = re.compile(regex_field_misspells, re.IGNORECASE)
+
+    ret = []
+    for line in desc.splitlines():
+        if check_re_field_misspells.match(line):
+            error = RELNOTE_MISSPELL_MSG % (regex_relnote, )
+            ret.append(
+                rh.results.HookResult(('commit msg: "%s:" '
+                                       'tag spelling error') % (field,),
+                                      project, commit, error=error))
+
+    # Check 2: Check that multiline Relnotes are quoted.
+
+    check_re_empty_string = re.compile(r'^$')
+
+    # Regex to find other fields that could be used.
+    regex_other_fields = r'^[a-zA-Z0-9-]+:'
+    check_re_other_fields = re.compile(regex_other_fields)
+
+    desc_lines = desc.splitlines()
+    for i, cur_line in enumerate(desc_lines):
+        # Look for a Relnote tag that is before the last line and
+        # lacking any quotes.
+        if (check_re_relnote.match(cur_line) and
+                i < len(desc_lines) - 1 and
+                '"' not in cur_line):
+            next_line = desc_lines[i + 1]
+            # Check that the next line does not contain any other field
+            # and it's not an empty string.
+            if (not check_re_other_fields.findall(next_line) and
+                    not check_re_empty_string.match(next_line)):
+                ret.append(
+                    rh.results.HookResult(('commit msg: "%s:" '
+                                           'tag missing quotes') % (field,),
+                                          project, commit,
+                                          error=RELNOTE_MISSING_QUOTES_MSG))
+                break
+
+    # Check 3: Check that multiline Relnotes contain matching quotes.
+
+    first_quote_found = False
+    second_quote_found = False
+    for cur_line in desc_lines:
+        contains_quote = '"' in cur_line
+        contains_field = check_re_other_fields.findall(cur_line)
+        # If we have found the first quote and another field, break and fail.
+        if first_quote_found and contains_field:
+            break
+        # If we have found the first quote, this line contains a quote,
+        # and this line is not another field, break and succeed.
+        if first_quote_found and contains_quote:
+            second_quote_found = True
+            break
+        # Check that the `Relnote:` tag exists and it contains a starting quote.
+        if check_re_relnote.match(cur_line) and contains_quote:
+            first_quote_found = True
+            # A single-line Relnote containing a start and ending quote
+            # is valid as well.
+            if cur_line.count('"') == 2:
+                second_quote_found = True
+                break
+
+    if first_quote_found != second_quote_found:
+        ret.append(
+            rh.results.HookResult(('commit msg: "%s:" '
+                                   'tag missing closing quote') % (field,),
+                                  project, commit,
+                                  error=RELNOTE_MISSING_QUOTES_MSG))
+    return ret
+
+
 def check_cpplint(project, commit, _desc, diff, options=None):
     """Run cpplint."""
     # This list matches what cpplint expects.  We could run on more (like .cxx),
@@ -656,6 +785,7 @@ BUILTIN_HOOKS = {
     'commit_msg_changeid_field': check_commit_msg_changeid_field,
     'commit_msg_prebuilt_apk_fields': check_commit_msg_prebuilt_apk_fields,
     'commit_msg_test_field': check_commit_msg_test_field,
+    'commit_msg_relnote_field_format': check_commit_msg_relnote_field_format,
     'cpplint': check_cpplint,
     'gofmt': check_gofmt,
     'google_java_format': check_google_java_format,
