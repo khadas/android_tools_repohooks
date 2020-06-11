@@ -262,11 +262,11 @@ class BuiltinHooksTests(unittest.TestCase):
         for desc in msgs:
             ret = func(self.project, 'commit', desc, diff, options=self.options)
             if accept:
-                self.assertEqual(
-                    ret, None, msg='Should have accepted: {{{%s}}}' % (desc,))
+                self.assertFalse(
+                    bool(ret), msg='Should have accepted: {{{%s}}}' % (desc,))
             else:
-                self.assertNotEqual(
-                    ret, None, msg='Should have rejected: {{{%s}}}' % (desc,))
+                self.assertTrue(
+                    bool(ret), msg='Should have rejected: {{{%s}}}' % (desc,))
 
     def _test_file_filter(self, mock_check, func, files):
         """Helper for testing hooks that filter by files and run external tools.
