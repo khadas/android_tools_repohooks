@@ -730,7 +730,7 @@ def check_pylint3(project, commit, desc, diff, options=None):
                          options=options)
 
 
-def check_rustfmt(project, commit, desc, diff, options=None):
+def check_rustfmt(project, commit, _desc, diff, options=None):
     """Run "rustfmt --check" on diffed rust files"""
     filtered = _filter_diff(diff, [r'\.rs$'])
     if not filtered:
