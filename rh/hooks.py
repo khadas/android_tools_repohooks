@@ -648,6 +648,61 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
     return ret
 
 
+RELNOTE_REQUIRED_CURRENT_TXT_MSG = """\
+Commit contains a change to current.txt or public_plus_experimental_current.txt,
+but the commit message does not contain the required `Relnote:` tag.  It must
+match the regex:
+
+    %s
+
+The Relnote: stanza is free-form and should describe what developers need to
+know about your change.  If you are making infrastructure changes, you
+can set the Relnote: stanza to be "N/A" for the commit to not be included
+in release notes.
+
+Some examples:
+
+Relnote: "Added a new API `Class#isBetter` to determine whether or not the
+class is better"
+Relnote: Fixed an issue where the UI would hang on a double tap.
+Relnote: N/A
+
+Check the git history for more examples.
+"""
+
+def check_commit_msg_relnote_for_current_txt(project, commit, desc, diff,
+                                             options=None):
+    """Check changes to current.txt contain the 'Relnote:' stanza."""
+    field = 'Relnote'
+    regex = r'^%s: .+$' % (field,)
+    check_re = re.compile(regex, re.IGNORECASE)
+
+    if options.args():
+        raise ValueError('commit msg %s check takes no options' % (field,))
+
+    filtered = _filter_diff(
+        diff,
+        [r'^(public_plus_experimental_current|current)\.txt$']
+    )
+    # If the commit does not contain a change to *current.txt, then this repo
+    # hook check no longer applies.
+    if not filtered:
+        return None
+
+    found = []
+    for line in desc.splitlines():
+        if check_re.match(line):
+            found.append(line)
+
+    if not found:
+        error = RELNOTE_REQUIRED_CURRENT_TXT_MSG % (regex)
+    else:
+        return None
+
+    return [rh.results.HookResult('commit msg: "%s:" check' % (field,),
+                                  project, commit, error=error)]
+
+
 def check_cpplint(project, commit, _desc, diff, options=None):
     """Run cpplint."""
     # This list matches what cpplint expects.  We could run on more (like .cxx),
@@ -812,6 +867,8 @@ BUILTIN_HOOKS = {
     'commit_msg_prebuilt_apk_fields': check_commit_msg_prebuilt_apk_fields,
     'commit_msg_test_field': check_commit_msg_test_field,
     'commit_msg_relnote_field_format': check_commit_msg_relnote_field_format,
+    'commit_msg_relnote_for_current_txt':
+        check_commit_msg_relnote_for_current_txt,
     'cpplint': check_cpplint,
     'gofmt': check_gofmt,
     'google_java_format': check_google_java_format,
