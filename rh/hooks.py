@@ -682,7 +682,7 @@ def check_commit_msg_relnote_for_current_txt(project, commit, desc, diff,
 
     filtered = _filter_diff(
         diff,
-        [r'^(public_plus_experimental_current|current)\.txt$']
+        [r'(^|/)(public_plus_experimental_current|current)\.txt$']
     )
     # If the commit does not contain a change to *current.txt, then this repo
     # hook check no longer applies.
