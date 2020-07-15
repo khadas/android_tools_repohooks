@@ -38,7 +38,7 @@ elif sys.version_info.major == 3 and sys.version_info < (3, 4):
     # We don't actually test <Python-3.6.  Hope for the best!
     print('repohooks: error: Python-3.4+ is required', file=sys.stderr)
     sys.exit(1)
-elif sys.version_info.major == 3 and sys.version_info < (3, 6):
+elif sys.version_info < (3, 6):
     # We want to get people off of old versions of Python.
     print('repohooks: warning: Python-3.6+ is going to be required; '
           'please upgrade soon to maintain support.', file=sys.stderr)
