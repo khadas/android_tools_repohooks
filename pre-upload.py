@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # Copyright 2016 The Android Open Source Project
 #
@@ -29,18 +29,9 @@ import sys
 
 
 # Assert some minimum Python versions as we don't test or support any others.
-# We only support Python 2.7, and require 2.7.5+/3.4+ to include signal fix:
-# https://bugs.python.org/issue14173
-if sys.version_info < (2, 7, 5):
-    print('repohooks: error: Python-2.7.5+ is required', file=sys.stderr)
-    sys.exit(1)
-elif sys.version_info.major == 3 and sys.version_info < (3, 5):
+if sys.version_info < (3, 5):
     print('repohooks: error: Python-3.5+ is required', file=sys.stderr)
     sys.exit(1)
-elif sys.version_info < (3, 6):
-    # We want to get people off of old versions of Python.
-    print('repohooks: warning: Python-3.6+ is going to be required; '
-          'please upgrade soon to maintain support.', file=sys.stderr)
 
 
 _path = os.path.dirname(os.path.realpath(__file__))
