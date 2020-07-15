@@ -21,6 +21,7 @@ from __future__ import print_function
 import os
 import sys
 import unittest
+from unittest import mock
 
 _path = os.path.realpath(__file__ + '/../..')
 if sys.path[0] != _path:
@@ -33,8 +34,6 @@ del _path
 import rh
 import rh.config
 import rh.hooks
-from rh.sixish import mock
-from rh.sixish import string_types
 
 
 class HooksDocsTests(unittest.TestCase):
@@ -261,14 +260,14 @@ class UtilsTests(unittest.TestCase):
         # Just verify it returns something and doesn't crash.
         # pylint: disable=protected-access
         ret = rh.hooks._get_build_os_name()
-        self.assertTrue(isinstance(ret, string_types))
+        self.assertTrue(isinstance(ret, str))
         self.assertNotEqual(ret, '')
 
     def testGetHelperPath(self):
         """Check get_helper_path behavior."""
         # Just verify it doesn't crash.  It's a dirt simple func.
         ret = rh.hooks.get_helper_path('booga')
-        self.assertTrue(isinstance(ret, string_types))
+        self.assertTrue(isinstance(ret, str))
         self.assertNotEqual(ret, '')
 
 
