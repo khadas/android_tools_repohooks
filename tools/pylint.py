@@ -34,6 +34,19 @@ DEFAULT_PYLINTRC_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'pylintrc')
 
 
+def is_pylint3(pylint):
+    """See whether |pylint| supports Python 3."""
+    # Make sure pylint is using Python 3.
+    result = subprocess.run([pylint, '--version'], stdout=subprocess.PIPE,
+                            check=True)
+    if b'Python 3' not in result.stdout:
+        print('%s: unable to locate a Python 3 version of pylint; Python 3 '
+              'support cannot be guaranteed' % (__file__,), file=sys.stderr)
+        return False
+
+    return True
+
+
 def find_pylint3():
     """Figure out the name of the pylint tool for Python 3.
 
@@ -48,13 +61,6 @@ def find_pylint3():
         print('%s: unable to locate pylint; please install:\n'
               'sudo apt-get install pylint' % (__file__,), file=sys.stderr)
         sys.exit(1)
-
-    # Make sure pylint is using Python 3.
-    result = subprocess.run(['pylint', '--version'], stdout=subprocess.PIPE,
-                            check=True)
-    if b'Python 3' not in result.stdout:
-        print('%s: unable to locate a Python 3 version of pylint; Python 3 '
-              'support cannot be guaranteed' % (__file__,), file=sys.stderr)
 
     return 'pylint'
 
@@ -86,6 +92,10 @@ def main(argv):
             pylint = find_pylint3()
         else:
             pylint = 'pylint'
+
+    # Make sure pylint is using Python 3.
+    if opts.py3:
+        is_pylint3(pylint)
 
     cmd = [pylint]
     if not opts.no_rcfile:
