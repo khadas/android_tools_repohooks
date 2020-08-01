@@ -172,7 +172,7 @@ def get_affected_files(commit):
 
 def get_commits(ignore_merged_commits=False):
     """Returns a list of commits for this review."""
-    cmd = ['git', 'log', '%s..' % get_upstream_branch(), '--format=%H']
+    cmd = ['git', 'rev-list', '%s..' % get_upstream_branch()]
     if ignore_merged_commits:
         cmd.append('--first-parent')
     return rh.utils.run(cmd, capture_output=True).stdout.split()
