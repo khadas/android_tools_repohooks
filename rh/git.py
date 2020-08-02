@@ -167,7 +167,7 @@ def get_affected_files(commit):
     Returns:
       A list of modified/added (and perhaps deleted) files
     """
-    return raw_diff(os.getcwd(), '%s^!' % commit)
+    return raw_diff(os.getcwd(), '%s^-' % commit)
 
 
 def get_commits(ignore_merged_commits=False):
