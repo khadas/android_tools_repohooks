@@ -180,7 +180,7 @@ def get_commits(ignore_merged_commits=False):
 
 def get_commit_desc(commit):
     """Returns the full commit message of a commit."""
-    cmd = ['git', 'log', '--format=%B', commit + '^!']
+    cmd = ['git', 'diff-tree', '-s', '--always', '--format=%B', commit]
     return rh.utils.run(cmd, capture_output=True).stdout
 
 
