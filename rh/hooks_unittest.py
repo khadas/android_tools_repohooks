@@ -293,7 +293,7 @@ class BuiltinHooksTests(unittest.TestCase):
         """
         # First call should do nothing as there are no files to check.
         ret = func(self.project, 'commit', 'desc', (), options=self.options)
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
         self.assertFalse(mock_check.called)
 
         # Second call should include some checks.
@@ -690,21 +690,21 @@ class BuiltinHooksTests(unittest.TestCase):
         # First call should do nothing as there are no files to check.
         ret = rh.hooks.check_gofmt(
             self.project, 'commit', 'desc', (), options=self.options)
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
         self.assertFalse(mock_check.called)
 
         # Second call will have some results.
         diff = [rh.git.RawDiffEntry(file='foo.go')]
         ret = rh.hooks.check_gofmt(
             self.project, 'commit', 'desc', diff, options=self.options)
-        self.assertNotEqual(ret, None)
+        self.assertIsNotNone(ret)
 
     def test_jsonlint(self, mock_check, _mock_run):
         """Verify the jsonlint builtin hook."""
         # First call should do nothing as there are no files to check.
         ret = rh.hooks.check_json(
             self.project, 'commit', 'desc', (), options=self.options)
-        self.assertEqual(ret, None)
+        self.assertIsNone(ret)
         self.assertFalse(mock_check.called)
 
         # TODO: Actually pass some valid/invalid json data down.
