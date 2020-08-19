@@ -725,8 +725,17 @@ class BuiltinHooksTests(unittest.TestCase):
                                ('foo.py',))
 
     def test_rustfmt(self, mock_check, _mock_run):
-        self._test_file_filter(mock_check, rh.hooks.check_rustfmt,
-                               ('foo.rs',))
+        # First call should do nothing as there are no files to check.
+        ret = rh.hooks.check_rustfmt(
+            self.project, 'commit', 'desc', (), options=self.options)
+        self.assertEqual(ret, None)
+        self.assertFalse(mock_check.called)
+
+        # Second call will have some results.
+        diff = [rh.git.RawDiffEntry(file='lib.rs')]
+        ret = rh.hooks.check_rustfmt(
+            self.project, 'commit', 'desc', diff, options=self.options)
+        self.assertNotEqual(ret, None)
 
     def test_xmllint(self, mock_check, _mock_run):
         """Verify the xmllint builtin hook."""
