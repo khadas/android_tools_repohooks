@@ -74,8 +74,14 @@ class RawConfigParser(configparser.RawConfigParser):
                 return default
             raise
 
-    def items(self, section, default=_UNSET):
+    def items(self, section=_UNSET, default=_UNSET):
         """Return a list of (key, value) tuples for the options in |section|."""
+        if section is _UNSET:
+            # Python 3 compat logic.  Return a dict of section-to-options.
+            if sys.version_info.major < 3:
+                return [(x, self.items(x)) for x in self.sections()]
+            return super(RawConfigParser, self).items()
+
         try:
             return configparser.RawConfigParser.items(self, section)
         except configparser.NoSectionError:
@@ -83,6 +89,14 @@ class RawConfigParser(configparser.RawConfigParser):
                 return default
             raise
 
+    if sys.version_info.major < 3:
+        def read_dict(self, dictionary):
+            """Store |dictionary| into ourselves."""
+            for section, settings in dictionary.items():
+                for option, value in settings:
+                    if not self.has_section(section):
+                        self.add_section(section)
+                    self.set(section, option, value)
 
 class PreUploadConfig(object):
     """Config file used for per-project `repo upload` hooks."""
