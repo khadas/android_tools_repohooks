@@ -102,9 +102,16 @@ class PreUploadConfig(object):
     BUILTIN_HOOKS_OPTIONS_SECTION = 'Builtin Hooks Options'
     TOOL_PATHS_SECTION = 'Tool Paths'
     OPTIONS_SECTION = 'Options'
+    VALID_SECTIONS = {
+        CUSTOM_HOOKS_SECTION,
+        BUILTIN_HOOKS_SECTION,
+        BUILTIN_HOOKS_OPTIONS_SECTION,
+        TOOL_PATHS_SECTION,
+        OPTIONS_SECTION,
+    }
 
     OPTION_IGNORE_MERGED_COMMITS = 'ignore_merged_commits'
-    VALID_OPTIONS = (OPTION_IGNORE_MERGED_COMMITS,)
+    VALID_OPTIONS = {OPTION_IGNORE_MERGED_COMMITS}
 
     def __init__(self, paths=('',), global_paths=()):
         """Initialize.
@@ -189,14 +196,7 @@ class PreUploadConfig(object):
         config = self.config
 
         # Reject unknown sections.
-        valid_sections = set((
-            self.CUSTOM_HOOKS_SECTION,
-            self.BUILTIN_HOOKS_SECTION,
-            self.BUILTIN_HOOKS_OPTIONS_SECTION,
-            self.TOOL_PATHS_SECTION,
-            self.OPTIONS_SECTION,
-        ))
-        bad_sections = set(config.sections()) - valid_sections
+        bad_sections = set(config.sections()) - self.VALID_SECTIONS
         if bad_sections:
             raise ValidationError('%s: unknown sections: %s' %
                                   (self.paths, bad_sections))
@@ -252,10 +252,9 @@ class PreUploadConfig(object):
                                       (self.paths, bad_tools))
 
         # Reject unknown options.
-        valid_options = set(self.VALID_OPTIONS)
         if config.has_section(self.OPTIONS_SECTION):
             options = set(config.options(self.OPTIONS_SECTION))
-            bad_options = options - valid_options
+            bad_options = options - self.VALID_OPTIONS
             if bad_options:
                 raise ValidationError('%s: unknown options: %s' %
                                       (self.paths, bad_options))
