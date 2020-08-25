@@ -39,37 +39,35 @@ import rh.config
 class PreUploadConfigTests(unittest.TestCase):
     """Tests for the PreUploadConfig class."""
 
+    def testMissing(self):
+        """Instantiating a non-existent config file should be fine."""
+        rh.config.PreUploadConfig()
+
+
+class PreUploadFileTests(unittest.TestCase):
+    """Tests for the PreUploadFile class."""
+
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def _write_config(self, data, filename=None):
+    def _write_config(self, data):
         """Helper to write out a config file for testing."""
-        if filename is None:
-            filename = rh.config.PreUploadConfig.FILENAME
-        path = os.path.join(self.tempdir, filename)
+        path = os.path.join(self.tempdir, 'temp.cfg')
         with open(path, 'w') as fp:
             fp.write(data)
-
-    def _write_global_config(self, data):
-        """Helper to write out a global config file for testing."""
-        self._write_config(
-            data, filename=rh.config.PreUploadConfig.GLOBAL_FILENAME)
-
-    def testMissing(self):
-        """Instantiating a non-existent config file should be fine."""
-        rh.config.PreUploadConfig()
+        return path
 
     def testEmpty(self):
         """Instantiating an empty config file should be fine."""
-        self._write_config('')
-        rh.config.PreUploadConfig(paths=(self.tempdir,))
+        path = self._write_config('')
+        rh.config.PreUploadFile(path)
 
     def testValid(self):
         """Verify a fully valid file works."""
-        self._write_config("""# This be a comment me matey.
+        path = self._write_config("""# This be a comment me matey.
 [Hook Scripts]
 name = script --with "some args"
 
@@ -82,39 +80,62 @@ cpplint = --some 'more args'
 [Options]
 ignore_merged_commits = true
 """)
-        rh.config.PreUploadConfig(paths=(self.tempdir,))
+        rh.config.PreUploadFile(path)
 
     def testUnknownSection(self):
         """Reject unknown sections."""
-        self._write_config('[BOOGA]')
-        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadConfig,
-                          paths=(self.tempdir,))
+        path = self._write_config('[BOOGA]')
+        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadFile,
+                          path)
 
     def testUnknownBuiltin(self):
         """Reject unknown builtin hooks."""
-        self._write_config('[Builtin Hooks]\nbooga = borg!')
-        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadConfig,
-                          paths=(self.tempdir,))
+        path = self._write_config('[Builtin Hooks]\nbooga = borg!')
+        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadFile,
+                          path)
 
     def testEmptyCustomHook(self):
         """Reject empty custom hooks."""
-        self._write_config('[Hook Scripts]\nbooga = \t \n')
-        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadConfig,
-                          paths=(self.tempdir,))
+        path = self._write_config('[Hook Scripts]\nbooga = \t \n')
+        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadFile,
+                          path)
 
     def testInvalidIni(self):
         """Reject invalid ini files."""
-        self._write_config('[Hook Scripts]\n =')
-        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadConfig,
-                          paths=(self.tempdir,))
+        path = self._write_config('[Hook Scripts]\n =')
+        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadFile,
+                          path)
 
     def testInvalidString(self):
         """Catch invalid string quoting."""
-        self._write_config("""[Hook Scripts]
+        path = self._write_config("""[Hook Scripts]
 name = script --'bad-quotes
 """)
-        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadConfig,
-                          paths=(self.tempdir,))
+        self.assertRaises(rh.config.ValidationError, rh.config.PreUploadFile,
+                          path)
+
+
+class PreUploadSettingsTests(unittest.TestCase):
+    """Tests for the PreUploadSettings class."""
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tempdir)
+
+    def _write_config(self, data, filename=None):
+        """Helper to write out a config file for testing."""
+        if filename is None:
+            filename = rh.config.PreUploadSettings.FILENAME
+        path = os.path.join(self.tempdir, filename)
+        with open(path, 'w') as fp:
+            fp.write(data)
+
+    def _write_global_config(self, data):
+        """Helper to write out a global config file for testing."""
+        self._write_config(
+            data, filename=rh.config.PreUploadSettings.GLOBAL_FILENAME)
 
     def testGlobalConfigs(self):
         """Verify global configs stack properly."""
@@ -125,8 +146,8 @@ commit_msg_test_field = false""")
         self._write_config("""[Builtin Hooks]
 commit_msg_bug_field = false
 commit_msg_test_field = true""")
-        config = rh.config.PreUploadConfig(paths=(self.tempdir,),
-                                           global_paths=(self.tempdir,))
+        config = rh.config.PreUploadSettings(paths=(self.tempdir,),
+                                             global_paths=(self.tempdir,))
         self.assertEqual(config.builtin_hooks,
                          ['commit_msg_changeid_field', 'commit_msg_test_field'])
 
