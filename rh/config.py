@@ -98,11 +98,9 @@ class RawConfigParser(configparser.RawConfigParser):
                         self.add_section(section)
                     self.set(section, option, value)
 
-class PreUploadConfig(object):
-    """Config file used for per-project `repo upload` hooks."""
 
-    FILENAME = 'PREUPLOAD.cfg'
-    GLOBAL_FILENAME = 'GLOBAL-PREUPLOAD.cfg'
+class PreUploadConfig(object):
+    """A single (abstract) config used for `repo upload` hooks."""
 
     CUSTOM_HOOKS_SECTION = 'Hook Scripts'
     BUILTIN_HOOKS_SECTION = 'Builtin Hooks'
@@ -120,34 +118,17 @@ class PreUploadConfig(object):
     OPTION_IGNORE_MERGED_COMMITS = 'ignore_merged_commits'
     VALID_OPTIONS = {OPTION_IGNORE_MERGED_COMMITS}
 
-    def __init__(self, paths=('',), global_paths=()):
+    def __init__(self, config=None, source=None):
         """Initialize.
 
-        All the config files found will be merged together in order.
-
         Args:
-          paths: The directories to look for config files.
-          global_paths: The directories to look for global config files.
+          config: A configparse.ConfigParser instance.
+          source: Where this config came from.
         """
-        config = RawConfigParser()
-
-        def _search(paths, filename):
-            for path in paths:
-                path = os.path.join(path, filename)
-                if os.path.exists(path):
-                    self.paths.append(path)
-                    try:
-                        config.read(path)
-                    except configparser.ParsingError as e:
-                        raise ValidationError('%s: %s' % (path, e))
-
-        self.paths = []
-        _search(global_paths, self.GLOBAL_FILENAME)
-        _search(paths, self.FILENAME)
-
-        self.config = config
-
-        self._validate()
+        self.config = config if config else RawConfigParser()
+        self.source = source
+        if config:
+            self._validate()
 
     @property
     def custom_hooks(self):
@@ -198,6 +179,10 @@ class PreUploadConfig(object):
                             self.OPTION_IGNORE_MERGED_COMMITS, None),
             False)
 
+    def update(self, preupload_config):
+        """Merge settings from |preupload_config| into ourself."""
+        self.config.read_dict(preupload_config.config)
+
     def _validate(self):
         """Run consistency checks on the config settings."""
         config = self.config
@@ -206,13 +191,13 @@ class PreUploadConfig(object):
         bad_sections = set(config.sections()) - self.VALID_SECTIONS
         if bad_sections:
             raise ValidationError('%s: unknown sections: %s' %
-                                  (self.paths, bad_sections))
+                                  (self.source, bad_sections))
 
         # Reject blank custom hooks.
         for hook in self.custom_hooks:
             if not config.get(self.CUSTOM_HOOKS_SECTION, hook):
                 raise ValidationError('%s: custom hook "%s" cannot be blank' %
-                                      (self.paths, hook))
+                                      (self.source, hook))
 
         # Reject unknown builtin hooks.
         valid_builtin_hooks = set(rh.hooks.BUILTIN_HOOKS.keys())
@@ -221,7 +206,7 @@ class PreUploadConfig(object):
             bad_hooks = hooks - valid_builtin_hooks
             if bad_hooks:
                 raise ValidationError('%s: unknown builtin hooks: %s' %
-                                      (self.paths, bad_hooks))
+                                      (self.source, bad_hooks))
         elif config.has_section(self.BUILTIN_HOOKS_OPTIONS_SECTION):
             raise ValidationError('Builtin hook options specified, but missing '
                                   'builtin hook settings')
@@ -231,7 +216,7 @@ class PreUploadConfig(object):
             bad_hooks = hooks - valid_builtin_hooks
             if bad_hooks:
                 raise ValidationError('%s: unknown builtin hook options: %s' %
-                                      (self.paths, bad_hooks))
+                                      (self.source, bad_hooks))
 
         # Verify hooks are valid shell strings.
         for hook in self.custom_hooks:
@@ -239,7 +224,7 @@ class PreUploadConfig(object):
                 self.custom_hook(hook)
             except ValueError as e:
                 raise ValidationError('%s: hook "%s" command line is invalid: '
-                                      '%s' % (self.paths, hook, e))
+                                      '%s' % (self.source, hook, e))
 
         # Verify hook options are valid shell strings.
         for hook in self.builtin_hooks:
@@ -247,7 +232,7 @@ class PreUploadConfig(object):
                 self.builtin_hook_option(hook)
             except ValueError as e:
                 raise ValidationError('%s: hook options "%s" are invalid: %s' %
-                                      (self.paths, hook, e))
+                                      (self.source, hook, e))
 
         # Reject unknown tools.
         valid_tools = set(rh.hooks.TOOL_PATHS.keys())
@@ -256,7 +241,7 @@ class PreUploadConfig(object):
             bad_tools = tools - valid_tools
             if bad_tools:
                 raise ValidationError('%s: unknown tools: %s' %
-                                      (self.paths, bad_tools))
+                                      (self.source, bad_tools))
 
         # Reject unknown options.
         if config.has_section(self.OPTIONS_SECTION):
@@ -264,4 +249,60 @@ class PreUploadConfig(object):
             bad_options = options - self.VALID_OPTIONS
             if bad_options:
                 raise ValidationError('%s: unknown options: %s' %
-                                      (self.paths, bad_options))
+                                      (self.source, bad_options))
+
+
+class PreUploadFile(PreUploadConfig):
+    """A single config (file) used for `repo upload` hooks."""
+
+    def __init__(self, path):
+        """Initialize.
+
+        Args:
+          path: The config file to load.
+        """
+        super(PreUploadFile, self).__init__(source=path)
+
+        try:
+            self.config.read(path)
+        except configparser.ParsingError as e:
+            raise ValidationError('%s: %s' % (path, e))
+
+        self._validate()
+
+
+class PreUploadSettings(PreUploadConfig):
+    """Settings for `repo upload` hooks.
+
+    This encompasses multiple config files and provides the final (merged)
+    settings for a particular project.
+    """
+
+    FILENAME = 'PREUPLOAD.cfg'
+    GLOBAL_FILENAME = 'GLOBAL-PREUPLOAD.cfg'
+
+    def __init__(self, paths=('',), global_paths=()):
+        """Initialize.
+
+        All the config files found will be merged together in order.
+
+        Args:
+          paths: The directories to look for config files.
+          global_paths: The directories to look for global config files.
+        """
+        super(PreUploadSettings, self).__init__()
+
+        def _search(paths, filename):
+            for path in paths:
+                path = os.path.join(path, filename)
+                if os.path.exists(path):
+                    self.paths.append(path)
+                    self.update(PreUploadFile(path))
+
+        self.paths = []
+        _search(global_paths, self.GLOBAL_FILENAME)
+        _search(paths, self.FILENAME)
+
+        # We validated configs in isolation, now do one final pass altogether.
+        self.source = '{%s}' % '|'.join(self.paths)
+        self._validate()
