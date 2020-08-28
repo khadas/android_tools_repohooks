@@ -44,8 +44,8 @@ class PreUploadConfigTests(unittest.TestCase):
         rh.config.PreUploadConfig()
 
 
-class PreUploadFileTests(unittest.TestCase):
-    """Tests for the PreUploadFile class."""
+class FileTestCase(unittest.TestCase):
+    """Helper class for tests cases to setup configuration files."""
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
@@ -53,12 +53,30 @@ class PreUploadFileTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tempdir)
 
-    def _write_config(self, data):
-        """Helper to write out a config file for testing."""
-        path = os.path.join(self.tempdir, 'temp.cfg')
+    def _write_config(self, data, filename='temp.cfg'):
+        """Helper to write out a config file for testing.
+
+        Returns:
+          Path to the file where the configuration was written.
+        """
+        path = os.path.join(self.tempdir, filename)
         with open(path, 'w') as fp:
             fp.write(data)
         return path
+
+    def _write_local_config(self, data):
+        """Helper to write out a local config file for testing."""
+        return self._write_config(
+            data, filename=rh.config.LocalPreUploadFile.FILENAME)
+
+    def _write_global_config(self, data):
+        """Helper to write out a global config file for testing."""
+        return self._write_config(
+            data, filename=rh.config.GlobalPreUploadFile.FILENAME)
+
+
+class PreUploadFileTests(FileTestCase):
+    """Tests for the PreUploadFile class."""
 
     def testEmpty(self):
         """Instantiating an empty config file should be fine."""
@@ -115,27 +133,8 @@ name = script --'bad-quotes
                           path)
 
 
-class PreUploadSettingsTests(unittest.TestCase):
+class PreUploadSettingsTests(FileTestCase):
     """Tests for the PreUploadSettings class."""
-
-    def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tempdir)
-
-    def _write_config(self, data, filename=None):
-        """Helper to write out a config file for testing."""
-        if filename is None:
-            filename = rh.config.LocalPreUploadFile.FILENAME
-        path = os.path.join(self.tempdir, filename)
-        with open(path, 'w') as fp:
-            fp.write(data)
-
-    def _write_global_config(self, data):
-        """Helper to write out a global config file for testing."""
-        self._write_config(
-            data, filename=rh.config.GlobalPreUploadFile.FILENAME)
 
     def testGlobalConfigs(self):
         """Verify global configs stack properly."""
@@ -143,7 +142,7 @@ class PreUploadSettingsTests(unittest.TestCase):
 commit_msg_bug_field = true
 commit_msg_changeid_field = true
 commit_msg_test_field = false""")
-        self._write_config("""[Builtin Hooks]
+        self._write_local_config("""[Builtin Hooks]
 commit_msg_bug_field = false
 commit_msg_test_field = true""")
         config = rh.config.PreUploadSettings(paths=(self.tempdir,),
