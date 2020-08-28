@@ -182,6 +182,28 @@ class PlaceholderTests(unittest.TestCase):
         self.assertEqual(self.replacer.get('BUILD_OS'), m.return_value)
 
 
+class ExclusionScopeTests(unittest.TestCase):
+    """Verify behavior of ExclusionScope class."""
+
+    def testEmpty(self):
+        """Verify the in operator for an empty scope."""
+        scope = rh.hooks.ExclusionScope([])
+        self.assertNotIn('external/*', scope)
+
+    def testGlob(self):
+        """Verify the in operator for a scope using wildcards."""
+        scope = rh.hooks.ExclusionScope(['vendor/*', 'external/*'])
+        self.assertIn('external/tools', scope)
+
+    def testRegex(self):
+        """Verify the in operator for a scope using regular expressions."""
+        scope = rh.hooks.ExclusionScope(['^vendor/(?!google)',
+                                         'external/*'])
+        self.assertIn('vendor/', scope)
+        self.assertNotIn('vendor/google/', scope)
+        self.assertIn('vendor/other/', scope)
+
+
 class HookOptionsTests(unittest.TestCase):
     """Verify behavior of HookOptions object."""
 

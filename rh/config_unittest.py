@@ -133,6 +133,19 @@ name = script --'bad-quotes
                           path)
 
 
+class LocalPreUploadFileTests(FileTestCase):
+    """Test for the LocalPreUploadFile class."""
+
+    def testInvalidSectionConfig(self):
+        """Reject local config that uses invalid sections."""
+        path = self._write_config("""[Builtin Hooks Exclude Paths]
+cpplint = external/ 'test directory' ^vendor/(?!google/)
+""")
+        self.assertRaises(rh.config.ValidationError,
+                          rh.config.LocalPreUploadFile,
+                          path)
+
+
 class PreUploadSettingsTests(FileTestCase):
     """Tests for the PreUploadSettings class."""
 
@@ -149,6 +162,13 @@ commit_msg_test_field = true""")
                                              global_paths=(self.tempdir,))
         self.assertEqual(config.builtin_hooks,
                          ['commit_msg_changeid_field', 'commit_msg_test_field'])
+
+    def testGlobalExcludeScope(self):
+        """Verify exclude scope is valid for global config."""
+        self._write_global_config("""[Builtin Hooks Exclude Paths]
+cpplint = external/ 'test directory' ^vendor/(?!google/)
+""")
+        rh.config.PreUploadSettings(global_paths=(self.tempdir,))
 
 
 if __name__ == '__main__':

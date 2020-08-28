@@ -106,12 +106,14 @@ class PreUploadConfig(object):
     CUSTOM_HOOKS_SECTION = 'Hook Scripts'
     BUILTIN_HOOKS_SECTION = 'Builtin Hooks'
     BUILTIN_HOOKS_OPTIONS_SECTION = 'Builtin Hooks Options'
+    BUILTIN_HOOKS_EXCLUDE_SECTION = 'Builtin Hooks Exclude Paths'
     TOOL_PATHS_SECTION = 'Tool Paths'
     OPTIONS_SECTION = 'Options'
     VALID_SECTIONS = {
         CUSTOM_HOOKS_SECTION,
         BUILTIN_HOOKS_SECTION,
         BUILTIN_HOOKS_OPTIONS_SECTION,
+        BUILTIN_HOOKS_EXCLUDE_SECTION,
         TOOL_PATHS_SECTION,
         OPTIONS_SECTION,
     }
@@ -152,26 +154,35 @@ class PreUploadConfig(object):
         return shlex.split(self.config.get(self.BUILTIN_HOOKS_OPTIONS_SECTION,
                                            hook, ''))
 
+    def builtin_hook_exclude_paths(self, hook):
+        """List of paths for which |hook| should not be executed."""
+        return shlex.split(self.config.get(self.BUILTIN_HOOKS_EXCLUDE_SECTION,
+                                           hook, ''))
+
     @property
     def tool_paths(self):
         """List of all tool paths."""
         return dict(self.config.items(self.TOOL_PATHS_SECTION, ()))
 
     def callable_hooks(self):
-        """Yield a name and callback for each hook to be executed."""
+        """Yield a CallableHook for each hook to be executed."""
+        scope = rh.hooks.ExclusionScope([])
         for hook in self.custom_hooks:
             options = rh.hooks.HookOptions(hook,
                                            self.custom_hook(hook),
                                            self.tool_paths)
-            yield (hook, functools.partial(rh.hooks.check_custom,
-                                           options=options))
+            func = functools.partial(rh.hooks.check_custom, options=options)
+            yield rh.hooks.CallableHook(hook, func, scope)
 
         for hook in self.builtin_hooks:
             options = rh.hooks.HookOptions(hook,
                                            self.builtin_hook_option(hook),
                                            self.tool_paths)
-            yield (hook, functools.partial(rh.hooks.BUILTIN_HOOKS[hook],
-                                           options=options))
+            func = functools.partial(rh.hooks.BUILTIN_HOOKS[hook],
+                                     options=options)
+            scope = rh.hooks.ExclusionScope(
+                self.builtin_hook_exclude_paths(hook))
+            yield rh.hooks.CallableHook(hook, func, scope)
 
     @property
     def ignore_merged_commits(self):
@@ -300,6 +311,15 @@ class PreUploadFile(PreUploadConfig):
 class LocalPreUploadFile(PreUploadFile):
     """A single config file for a project (PREUPLOAD.cfg)."""
     FILENAME = 'PREUPLOAD.cfg'
+
+    def _validate(self):
+        super(LocalPreUploadFile, self)._validate()
+
+        # Reject Exclude Paths section for local config.
+        if self.config.has_section(self.BUILTIN_HOOKS_EXCLUDE_SECTION):
+            raise ValidationError('%s: [%s] is not valid in local files' %
+                                  (self.path,
+                                   self.BUILTIN_HOOKS_EXCLUDE_SECTION))
 
 
 class GlobalPreUploadFile(PreUploadFile):

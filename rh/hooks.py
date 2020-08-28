@@ -17,6 +17,8 @@
 
 from __future__ import print_function
 
+import collections
+import fnmatch
 import json
 import os
 import platform
@@ -141,6 +143,42 @@ class Placeholders(object):
         return _get_build_os_name()
 
 
+class ExclusionScope(object):
+    """Exclusion scope for a hook.
+
+    An exclusion scope can be used to determine if a hook has been disabled for
+    a specific project.
+    """
+
+    def __init__(self, scope):
+        """Initialize.
+
+        Args:
+          scope: A list of shell-style wildcards (fnmatch) or regular
+              expression. Regular expressions must start with the ^ character.
+        """
+        self._scope = []
+        for path in scope:
+            if path.startswith('^'):
+                self._scope.append(re.compile(path))
+            else:
+                self._scope.append(path)
+
+    def __contains__(self, proj_dir):
+        """Checks if |proj_dir| matches the excluded paths.
+
+        Args:
+          proj_dir: The relative path of the project.
+        """
+        for exclusion_path in self._scope:
+            if isinstance(exclusion_path, re.Pattern):
+                if exclusion_path.match(proj_dir):
+                    return True
+            elif fnmatch.fnmatch(proj_dir, exclusion_path):
+                return True
+        return False
+
+
 class HookOptions(object):
     """Holder class for hook options."""
 
@@ -197,6 +235,10 @@ class HookOptions(object):
 
         tool_path = os.path.normpath(self._tool_paths[tool_name])
         return self.expand_vars([tool_path])[0]
+
+
+# A callable hook.
+CallableHook = collections.namedtuple('CallableHook', ('name', 'hook', 'scope'))
 
 
 def _run(cmd, **kwargs):
