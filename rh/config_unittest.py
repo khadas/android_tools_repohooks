@@ -127,7 +127,7 @@ class PreUploadSettingsTests(unittest.TestCase):
     def _write_config(self, data, filename=None):
         """Helper to write out a config file for testing."""
         if filename is None:
-            filename = rh.config.PreUploadSettings.FILENAME
+            filename = rh.config.LocalPreUploadFile.FILENAME
         path = os.path.join(self.tempdir, filename)
         with open(path, 'w') as fp:
             fp.write(data)
@@ -135,7 +135,7 @@ class PreUploadSettingsTests(unittest.TestCase):
     def _write_global_config(self, data):
         """Helper to write out a global config file for testing."""
         self._write_config(
-            data, filename=rh.config.PreUploadSettings.GLOBAL_FILENAME)
+            data, filename=rh.config.GlobalPreUploadFile.FILENAME)
 
     def testGlobalConfigs(self):
         """Verify global configs stack properly."""
