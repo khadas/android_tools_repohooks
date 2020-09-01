@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import functools
+import itertools
 import os
 import shlex
 import sys
@@ -123,7 +124,8 @@ class PreUploadConfig(object):
 
         Args:
           config: A configparse.ConfigParser instance.
-          source: Where this config came from.
+          source: Where this config came from. This is used in error messages to
+              facilitate debugging. It is not necessarily a valid path.
         """
         self.config = config if config else RawConfigParser()
         self.source = source
@@ -253,7 +255,15 @@ class PreUploadConfig(object):
 
 
 class PreUploadFile(PreUploadConfig):
-    """A single config (file) used for `repo upload` hooks."""
+    """A single config (file) used for `repo upload` hooks.
+
+    This is an abstract class that requires subclasses to define the FILENAME
+    constant.
+
+    Attributes:
+      path: The path of the file.
+    """
+    FILENAME = None
 
     def __init__(self, path):
         """Initialize.
@@ -263,12 +273,38 @@ class PreUploadFile(PreUploadConfig):
         """
         super(PreUploadFile, self).__init__(source=path)
 
+        self.path = path
         try:
             self.config.read(path)
         except configparser.ParsingError as e:
             raise ValidationError('%s: %s' % (path, e))
 
         self._validate()
+
+    @classmethod
+    def from_paths(cls, paths):
+        """Search for files within paths that matches the class FILENAME.
+
+        Args:
+          paths: List of directories to look for config files.
+
+        Yields:
+          For each valid file found, an instance is created and returned.
+        """
+        for path in paths:
+            path = os.path.join(path, cls.FILENAME)
+            if os.path.exists(path):
+                yield cls(path)
+
+
+class LocalPreUploadFile(PreUploadFile):
+    """A single config file for a project (PREUPLOAD.cfg)."""
+    FILENAME = 'PREUPLOAD.cfg'
+
+
+class GlobalPreUploadFile(PreUploadFile):
+    """A single config file for a repo (GLOBAL-PREUPLOAD.cfg)."""
+    FILENAME = 'GLOBAL-PREUPLOAD.cfg'
 
 
 class PreUploadSettings(PreUploadConfig):
@@ -277,9 +313,6 @@ class PreUploadSettings(PreUploadConfig):
     This encompasses multiple config files and provides the final (merged)
     settings for a particular project.
     """
-
-    FILENAME = 'PREUPLOAD.cfg'
-    GLOBAL_FILENAME = 'GLOBAL-PREUPLOAD.cfg'
 
     def __init__(self, paths=('',), global_paths=()):
         """Initialize.
@@ -292,16 +325,13 @@ class PreUploadSettings(PreUploadConfig):
         """
         super(PreUploadSettings, self).__init__()
 
-        def _search(paths, filename):
-            for path in paths:
-                path = os.path.join(path, filename)
-                if os.path.exists(path):
-                    self.paths.append(path)
-                    self.update(PreUploadFile(path))
-
         self.paths = []
-        _search(global_paths, self.GLOBAL_FILENAME)
-        _search(paths, self.FILENAME)
+        for config in itertools.chain(
+                GlobalPreUploadFile.from_paths(global_paths),
+                LocalPreUploadFile.from_paths(paths)):
+            self.paths.append(config.path)
+            self.update(config)
+
 
         # We validated configs in isolation, now do one final pass altogether.
         self.source = '{%s}' % '|'.join(self.paths)
