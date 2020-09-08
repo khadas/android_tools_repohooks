@@ -274,15 +274,16 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
                      (e,))
         return False
 
+    project = rh.Project(name=project_name, dir=proj_dir, remote=remote)
+    rel_proj_dir = os.path.relpath(proj_dir, rh.git.find_repo_root())
+
     os.environ.update({
         'REPO_LREV': rh.git.get_commit_for_ref(upstream_branch),
-        'REPO_PATH': os.path.relpath(proj_dir, rh.git.find_repo_root()),
+        'REPO_PATH': rel_proj_dir,
         'REPO_PROJECT': project_name,
         'REPO_REMOTE': remote,
         'REPO_RREV': rh.git.get_remote_revision(upstream_branch, remote),
     })
-
-    project = rh.Project(name=project_name, dir=proj_dir, remote=remote)
 
     if not commit_list:
         commit_list = rh.git.get_commits(
@@ -301,8 +302,10 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
         commit_summary = desc.split('\n', 1)[0]
         output.commit_start(commit=commit, commit_summary=commit_summary)
 
-        for name, hook in hooks:
+        for name, hook, exclusion_scope in hooks:
             output.hook_start(name)
+            if rel_proj_dir in exclusion_scope:
+                break
             hook_results = hook(project, commit, desc, diff)
             (error, warning) = _process_hook_results(hook_results)
             if error is not None or warning is not None:
