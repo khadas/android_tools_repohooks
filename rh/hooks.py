@@ -171,7 +171,7 @@ class ExclusionScope(object):
           proj_dir: The relative path of the project.
         """
         for exclusion_path in self._scope:
-            if isinstance(exclusion_path, re.Pattern):
+            if hasattr(exclusion_path, 'match'):
                 if exclusion_path.match(proj_dir):
                     return True
             elif fnmatch.fnmatch(proj_dir, exclusion_path):
