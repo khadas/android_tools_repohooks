@@ -17,6 +17,7 @@
 
 from __future__ import print_function
 
+import configparser
 import functools
 import itertools
 import os
@@ -31,7 +32,6 @@ del _path
 # pylint: disable=wrong-import-position
 import rh.hooks
 import rh.shell
-from rh.sixish import configparser
 
 
 class Error(Exception):

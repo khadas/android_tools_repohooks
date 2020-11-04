@@ -25,9 +25,6 @@ if sys.path[0] != _path:
     sys.path.insert(0, _path)
 del _path
 
-# pylint: disable=wrong-import-position
-from rh.sixish import string_types
-
 
 # For use by ShellQuote.  Match all characters that the shell might treat
 # specially.  This means a number of things:
@@ -156,7 +153,7 @@ def boolean_shell_value(sval, default):
     if sval is None:
         return default
 
-    if isinstance(sval, string_types):
+    if isinstance(sval, str):
         s = sval.lower()
         if s in ('yes', 'y', '1', 'true'):
             return True
