@@ -47,7 +47,6 @@ import rh.results
 import rh.config
 import rh.git
 import rh.hooks
-import rh.sixish
 import rh.terminal
 import rh.utils
 
@@ -297,7 +296,7 @@ def _run_project_hooks_in_cwd(project_name, proj_dir, output, commit_list=None):
         os.environ['PREUPLOAD_COMMIT'] = commit
         diff = rh.git.get_affected_files(commit)
         desc = rh.git.get_commit_desc(commit)
-        rh.sixish.setenv('PREUPLOAD_COMMIT_MESSAGE', desc)
+        os.environ['PREUPLOAD_COMMIT_MESSAGE'] = desc
 
         commit_summary = desc.split('\n', 1)[0]
         output.commit_start(commit=commit, commit_summary=commit_summary)
