@@ -592,6 +592,18 @@ Single-line Relnote example:
 Relnote: Added a new API `Class#containsData`
 """
 
+RELNOTE_INVALID_QUOTES_MSG = """Commit message contains something that looks
+similar to the "Relnote:" tag but might be malformatted.  If you are using
+quotes that do not mark the start or end of a Relnote, you need to escape them
+with a backslash.
+
+Non-starting/non-ending quote Relnote examples:
+
+Relnote: "Fixed an error with `Class#getBar()` where \"foo\" would be returned
+in edge cases."
+Relnote: Added a new API to handle strings like \"foo\"
+"""
+
 def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
                                           options=None):
     """Check the commit for one correctly formatted 'Relnote:' line.
@@ -600,6 +612,8 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
     (1) Checks for possible misspellings of the 'Relnote:' tag.
     (2) Ensures that multiline release notes are properly formatted with a
     starting quote and an endling quote.
+    (3) Checks that release notes that contain non-starting or non-ending
+    quotes are escaped with a backslash.
     """
     field = 'Relnote'
     regex_relnote = r'^%s:.*$' % (field,)
@@ -676,16 +690,53 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
             first_quote_found = True
             # A single-line Relnote containing a start and ending quote
             # is valid as well.
-            if cur_line.count('"') == 2:
+            if cur_line.count('"') - cur_line.count('\\"') == 2:
                 second_quote_found = True
                 break
-
     if first_quote_found != second_quote_found:
         ret.append(
             rh.results.HookResult(('commit msg: "%s:" '
                                    'tag missing closing quote') % (field,),
                                   project, commit,
                                   error=RELNOTE_MISSING_QUOTES_MSG))
+
+    # Check 4: Check that non-starting or non-ending quotes are escaped with a
+    # backslash.
+    line_needs_checking = False
+    uses_invalide_quotes = False
+    for cur_line in desc_lines:
+        if check_re_other_fields.findall(cur_line):
+            line_needs_checking = False
+        on_relnote_line = check_re_relnote.match(cur_line)
+        # Determine if we are parsing the base `Relnote:` line.
+        if on_relnote_line and '"' in cur_line:
+            line_needs_checking = True
+        if line_needs_checking:
+            stripped_line = re.sub('^%s:' % field, '', cur_line,
+                                   flags=re.IGNORECASE).strip()
+            for i, character in enumerate(stripped_line):
+                # Case 1: Valid quote at the beginning of the
+                # base `Relnote:` line.
+                if on_relnote_line and i == 0:
+                    continue
+                # Case 2: Invalid quote at the beginning of following lines.
+                if not on_relnote_line and i == 0 and character == '"':
+                    uses_invalide_quotes = True
+                    break
+                # Case 3: Check all other cases.
+                if (character == '"'
+                        and 0 < i < len(stripped_line) - 1
+                        and stripped_line[i-1] != "\""
+                        and stripped_line[i-1] != "\\"):
+                    uses_invalide_quotes = True
+                    break
+
+    if uses_invalide_quotes:
+        ret.append(rh.results.HookResult(('commit msg: "%s:" '
+                                          'tag using unescaped '
+                                          'quotes') % (field,),
+                                         project, commit,
+                                         error=RELNOTE_INVALID_QUOTES_MSG))
     return ret
 
 
