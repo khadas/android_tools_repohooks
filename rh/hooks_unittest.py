@@ -525,12 +525,13 @@ class BuiltinHooksTests(unittest.TestCase):
             True,
             (
                 'subj',
-                'subj\n\nTest: i did done dood it\n',
-                'subj\n\nMore content\n\nTest: i did done dood it\n',
-                'subj\n\nRelnote: This is a release note\n',
-                'subj\n\nRelnote:This is a release note\n',
+                'subj\n\nTest: i did done dood it\nBug: 1234',
+                'subj\n\nMore content\n\nTest: i did done dood it\nBug: 1234',
+                'subj\n\nRelnote: This is a release note\nBug: 1234',
+                'subj\n\nRelnote:This is a release note\nBug: 1234',
                 'subj\n\nRelnote: This is a release note.\nBug: 1234',
                 'subj\n\nRelnote: "This is a release note."\nBug: 1234',
+                'subj\n\nRelnote: "This is a \\"release note\\"."\n\nBug: 1234',
                 'subj\n\nRelnote: This is a release note.\nChange-Id: 1234',
                 'subj\n\nRelnote: This is a release note.\n\nChange-Id: 1234',
                 ('subj\n\nRelnote: "This is a release note."\n\n'
@@ -546,6 +547,10 @@ class BuiltinHooksTests(unittest.TestCase):
                  'It contains a correct second line.\n'
                  'And even a third line."\n'
                  'Bug: 1234'),
+                ('subj\n\nRelnote: "This is a release note.\n'
+                 'It contains a correct second line.\n'
+                 '\\"Quotes\\" are even used on the third line."\n'
+                 'Bug: 1234'),
                 ('subj\n\nRelnote: This is release note 1.\n'
                  'Relnote: This is release note 2.\n'
                  'Bug: 1234'),
@@ -558,6 +563,10 @@ class BuiltinHooksTests(unittest.TestCase):
                  'Relnote: "This is release note 2, and it\n'
                  'contains a correctly formatted second line."\n'
                  'Bug: 1234'),
+                ('subj\n\nRelnote: "This is a release note with\n'
+                 'a correctly formatted second line."\n\n'
+                 'Bug: 1234'
+                 'Here is some extra "quoted" content.'),
             ))
 
         # Check some bad messages.
@@ -570,6 +579,8 @@ class BuiltinHooksTests(unittest.TestCase):
                 'subj\n\nRel-note: This is a release note.\n',
                 'subj\n\nrelnoTes: This is a release note.\n',
                 'subj\n\nrel-Note: This is a release note.\n',
+                'subj\n\nRelnote: "This is a "release note"."\nBug: 1234',
+                'subj\n\nRelnote: This is a "release note".\nBug: 1234',
                 ('subj\n\nRelnote: This is a release note.\n'
                  'It contains an incorrect second line.'),
                 ('subj\n\nRelnote: "This is a release note.\n'
@@ -591,6 +602,10 @@ class BuiltinHooksTests(unittest.TestCase):
                  'a correctly formatted second line."\n\n'
                  'Relnote: This is release note 2, and it\n'
                  'contains an incorrectly formatted second line.\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: "This is a release note.\n'
+                 'It contains a correct second line.\n'
+                 'But incorrect "quotes" on the third line."\n'
                  'Bug: 1234'),
             ))
 
