@@ -567,6 +567,33 @@ class BuiltinHooksTests(unittest.TestCase):
                  'a correctly formatted second line."\n\n'
                  'Bug: 1234'
                  'Here is some extra "quoted" content.'),
+                ('subj\n\nRelnote: """This is a release note.\n\n'
+                 'This relnote contains an empty line.\n'
+                 'Then a non-empty line.\n\n'
+                 'And another empty line."""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note.\n\n'
+                 'This relnote contains an empty line.\n'
+                 'Then an acceptable "quoted" line.\n\n'
+                 'And another empty line."""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note."""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note.\n'
+                 'It has a second line."""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note.\n'
+                 'It has a second line, but does not end here.\n'
+                 '"""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note.\n'
+                 '"It" has a second line, but does not end here.\n'
+                 '"""\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: "This is a release note.\n'
+                 'It has a second line, but does not end here.\n'
+                 '"\n\n'
+                 'Bug: 1234'),
             ))
 
         # Check some bad messages.
@@ -606,6 +633,13 @@ class BuiltinHooksTests(unittest.TestCase):
                 ('subj\n\nRelnote: "This is a release note.\n'
                  'It contains a correct second line.\n'
                  'But incorrect "quotes" on the third line."\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: """This is a release note.\n'
+                 'It has a second line, but no closing triple quote.\n\n'
+                 'Bug: 1234'),
+                ('subj\n\nRelnote: "This is a release note.\n'
+                 '"It" has a second line, but does not end here.\n'
+                 '"\n\n'
                  'Bug: 1234'),
             ))
 
