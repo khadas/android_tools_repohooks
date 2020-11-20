@@ -671,7 +671,6 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
                 break
 
     # Check 3: Check that multiline Relnotes contain matching quotes.
-
     first_quote_found = False
     second_quote_found = False
     for cur_line in desc_lines:
@@ -688,8 +687,13 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
         # Check that the `Relnote:` tag exists and it contains a starting quote.
         if check_re_relnote.match(cur_line) and contains_quote:
             first_quote_found = True
+            # A single-line Relnote containing a start and ending triple quote
+            # is valid.
+            if cur_line.count('"""') == 2:
+                second_quote_found = True
+                break
             # A single-line Relnote containing a start and ending quote
-            # is valid as well.
+            # is valid.
             if cur_line.count('"') - cur_line.count('\\"') == 2:
                 second_quote_found = True
                 break
@@ -703,7 +707,7 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
     # Check 4: Check that non-starting or non-ending quotes are escaped with a
     # backslash.
     line_needs_checking = False
-    uses_invalide_quotes = False
+    uses_invalid_quotes = False
     for cur_line in desc_lines:
         if check_re_other_fields.findall(cur_line):
             line_needs_checking = False
@@ -711,27 +715,33 @@ def check_commit_msg_relnote_field_format(project, commit, desc, _diff,
         # Determine if we are parsing the base `Relnote:` line.
         if on_relnote_line and '"' in cur_line:
             line_needs_checking = True
+            # We don't think anyone will type '"""' and then forget to
+            # escape it, so we're not checking for this.
+            if '"""' in cur_line:
+                break
         if line_needs_checking:
             stripped_line = re.sub('^%s:' % field, '', cur_line,
                                    flags=re.IGNORECASE).strip()
             for i, character in enumerate(stripped_line):
-                # Case 1: Valid quote at the beginning of the
-                # base `Relnote:` line.
-                if on_relnote_line and i == 0:
-                    continue
-                # Case 2: Invalid quote at the beginning of following lines.
-                if not on_relnote_line and i == 0 and character == '"':
-                    uses_invalide_quotes = True
-                    break
+                if i == 0:
+                    # Case 1: Valid quote at the beginning of the
+                    # base `Relnote:` line.
+                    if on_relnote_line:
+                        continue
+                    # Case 2: Invalid quote at the beginning of following
+                    # lines, where we are not terminating the release note.
+                    if character == '"' and stripped_line != '"':
+                        uses_invalid_quotes = True
+                        break
                 # Case 3: Check all other cases.
                 if (character == '"'
                         and 0 < i < len(stripped_line) - 1
-                        and stripped_line[i-1] != "\""
+                        and stripped_line[i-1] != '"'
                         and stripped_line[i-1] != "\\"):
-                    uses_invalide_quotes = True
+                    uses_invalid_quotes = True
                     break
 
-    if uses_invalide_quotes:
+    if uses_invalid_quotes:
         ret.append(rh.results.HookResult(('commit msg: "%s:" '
                                           'tag using unescaped '
                                           'quotes') % (field,),
