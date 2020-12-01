@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 # Copyright 2016 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +18,6 @@
 Normally this is loaded indirectly by repo itself, but it can be run directly
 when developing.
 """
-
-from __future__ import print_function
 
 import argparse
 import datetime
