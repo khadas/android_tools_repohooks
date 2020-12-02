@@ -1,4 +1,3 @@
-# -*- coding:utf-8 -*-
 # Copyright 2016 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,6 @@
 # limitations under the License.
 
 """Functions that implement the actual checks."""
-
-from __future__ import print_function
 
 import collections
 import fnmatch
