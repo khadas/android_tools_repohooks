@@ -23,8 +23,8 @@ import sys
 import subprocess
 
 
-assert (sys.version_info.major, sys.version_info.minor) >= (3, 5), (
-    'Python 3.5 or newer is required; found %s' % (sys.version,))
+assert (sys.version_info.major, sys.version_info.minor) >= (3, 6), (
+    'Python 3.6 or newer is required; found %s' % (sys.version,))
 
 
 DEFAULT_PYLINTRC_PATH = os.path.join(
