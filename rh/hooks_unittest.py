@@ -823,6 +823,20 @@ class BuiltinHooksTests(unittest.TestCase):
             self.project, 'commit', 'desc', diff, options=self.options)
         self.assertIsNotNone(ret)
 
+    def test_aidl_format(self, mock_check, _mock_run):
+        """Verify the aidl_format builtin hook."""
+        # First call should do nothing as there are no files to check.
+        ret = rh.hooks.check_aidl_format(
+            self.project, 'commit', 'desc', (), options=self.options)
+        self.assertIsNone(ret)
+        self.assertFalse(mock_check.called)
+
+        # Second call will have some results.
+        diff = [rh.git.RawDiffEntry(file='IFoo.go')]
+        ret = rh.hooks.check_gofmt(
+            self.project, 'commit', 'desc', diff, options=self.options)
+        self.assertIsNotNone(ret)
+
 
 if __name__ == '__main__':
     unittest.main()
