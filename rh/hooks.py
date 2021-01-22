@@ -974,9 +974,30 @@ def check_android_test_mapping(project, commit, _desc, diff, options=None):
     return _check_cmd('android-test-mapping-format', project, commit, cmd)
 
 
+def check_aidl_format(project, commit, _desc, diff, options=None):
+    """Checks that AIDL files are formatted with aidl-format."""
+    # All *.aidl files except for those under aidl_api directory.
+    filtered = _filter_diff(diff, [r'\.aidl$'], [r'/aidl_api/'])
+    if not filtered:
+        return None
+    aidl_format = options.tool_path('aidl-format')
+    cmd = [aidl_format, '-d'] + options.args((), filtered)
+    ret = []
+    for d in filtered:
+        data = rh.git.get_file_content(commit, d.file)
+        result = _run(cmd, input=data)
+        if result.stdout:
+            fixup_func = _fixup_func_caller([aidl_format, '-w', d.file])
+            ret.append(rh.results.HookResult(
+                'aidl-format', project, commit, error=result.stdout,
+                files=(d.file,), fixup_func=fixup_func))
+    return ret
+
+
 # Hooks that projects can opt into.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 BUILTIN_HOOKS = {
+    'aidl_format': check_aidl_format,
     'android_test_mapping_format': check_android_test_mapping,
     'bpfmt': check_bpfmt,
     'checkpatch': check_checkpatch,
@@ -1002,6 +1023,7 @@ BUILTIN_HOOKS = {
 # Additional tools that the hooks can call with their default values.
 # Note: Make sure to keep the top level README.md up to date when adding more!
 TOOL_PATHS = {
+    'aidl-format': 'aidl-format',
     'android-test-mapping-format':
         os.path.join(TOOLS_DIR, 'android_test_mapping_format.py'),
     'bpfmt': 'bpfmt',
