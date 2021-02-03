@@ -63,15 +63,6 @@ class RawConfigParser(configparser.RawConfigParser):
                 return default
             raise
 
-    def get(self, section, option, default=_UNSET):
-        """Return the value for |option| in |section| (with |default|)."""
-        try:
-            return configparser.RawConfigParser.get(self, section, option)
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            if default is not _UNSET:
-                return default
-            raise
-
     def items(self, section=_UNSET, default=_UNSET):
         """Return a list of (key, value) tuples for the options in |section|."""
         if section is _UNSET:
@@ -126,7 +117,8 @@ class PreUploadConfig(object):
 
     def custom_hook(self, hook):
         """The command to execute for |hook|."""
-        return shlex.split(self.config.get(self.CUSTOM_HOOKS_SECTION, hook, ''))
+        return shlex.split(self.config.get(
+            self.CUSTOM_HOOKS_SECTION, hook, fallback=''))
 
     @property
     def builtin_hooks(self):
@@ -136,13 +128,13 @@ class PreUploadConfig(object):
 
     def builtin_hook_option(self, hook):
         """The options to pass to |hook|."""
-        return shlex.split(self.config.get(self.BUILTIN_HOOKS_OPTIONS_SECTION,
-                                           hook, ''))
+        return shlex.split(self.config.get(
+            self.BUILTIN_HOOKS_OPTIONS_SECTION, hook, fallback=''))
 
     def builtin_hook_exclude_paths(self, hook):
         """List of paths for which |hook| should not be executed."""
-        return shlex.split(self.config.get(self.BUILTIN_HOOKS_EXCLUDE_SECTION,
-                                           hook, ''))
+        return shlex.split(self.config.get(
+            self.BUILTIN_HOOKS_EXCLUDE_SECTION, hook, fallback=''))
 
     @property
     def tool_paths(self):
@@ -174,7 +166,7 @@ class PreUploadConfig(object):
         """Whether to skip hooks for merged commits."""
         return rh.shell.boolean_shell_value(
             self.config.get(self.OPTIONS_SECTION,
-                            self.OPTION_IGNORE_MERGED_COMMITS, None),
+                            self.OPTION_IGNORE_MERGED_COMMITS, fallback=None),
             False)
 
     def update(self, preupload_config):
